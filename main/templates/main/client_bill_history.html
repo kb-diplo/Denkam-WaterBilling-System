@@ -1,0 +1,50 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block body %}
+<div class="container-fluid">
+    <h3 class="text-dark mb-4">{{ title }}</h3>
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <p class="text-primary m-0 fw-bold">Billing History for {% if client %}{{ client.name.first_name }} {{ client.name.last_name }}{% else %}Guest{% endif %}</p>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive table mt-2" id="dataTable" role="grid" aria-describedby="dataTable_info">
+                <table class="table my-0" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Bill ID</th>
+                            <th>Consumption (m³)</th>
+                            <th>Amount Payable</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                            <th>Date Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <tr>
+                            <td>{{ bill.id }}</td>
+                            <td>{{ bill.meter_consumption }}</td>
+                            <td>{{ bill.payable }}</td>
+                            <td>
+                                {{ bill.status }}
+                                {% if bill.status == 'Pending' %}
+                                    <a href="{% url 'initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm ml-2">Pay with M-Pesa</a>
+                                {% endif %}
+                            </td>
+                            <td>{{ bill.duedate }}</td>
+                            <td>{{ bill.created_on }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No billing history found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock body %}

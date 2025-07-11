@@ -1,0 +1,41 @@
+{% extends 'main/layout.html' %}
+
+{% block body %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if bill %}
+                    Update Reading for {{ client.name.get_full_name }}
+                {% else %}
+                    Add New Reading for {{ client.name.get_full_name }}
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <p><strong>Client:</strong> {{ client.name.get_full_name }}</p>
+            <p><strong>Address:</strong> {{ client.address }}</p>
+            <p><strong>Previous Reading:</strong> 
+                {% if previous_bill %}
+                    {{ previous_bill.reading }} (on {{ previous_bill.created_on|date:"Y-m-d" }})
+                {% else %}
+                    N/A (First reading)
+                {% endif %}
+            </p>
+            <hr>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">
+                    {% if bill %}
+                        Update Reading
+                    {% else %}
+                        Submit Reading
+                    {% endif %}
+                </button>
+                <a href="{% url 'meter_reader_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

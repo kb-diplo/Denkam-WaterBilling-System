@@ -1,0 +1,17 @@
+Django>=4.2
+asgiref
+dj-database-url>=1.2.0
+django-bootstrap-modal-forms
+django-cors-headers
+django-phonenumber-field
+django-storages
+dropbox
+gunicorn
+psycopg2-binary>=2.9.9
+python-dotenv==0.21.0
+sweetify
+whitenoise==6.2.0
+Pillow
+qrcode
+requests
+setuptools

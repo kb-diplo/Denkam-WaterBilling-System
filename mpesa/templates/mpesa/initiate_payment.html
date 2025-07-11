@@ -1,0 +1,57 @@
+{% extends 'main/layout.html' %}
+
+{% block body %}
+<div class="container mt-5">
+    <h2>Pay Bill with M-Pesa</h2>
+    <p><strong>Client:</strong> {{ bill.name }}</p>
+    <p><strong>Amount Due:</strong> {{ bill.payable }}</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="amount">Amount to Pay</label>
+            <input type="number" class="form-control" id="amount" name="amount" value="{{ bill.payable|floatformat:2 }}" min="1" max="{{ bill.payable|floatformat:2 }}" required>
+        </div>
+        <div class="form-group">
+            <label for="phone_number">M-Pesa Phone Number</label>
+            <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="e.g., 2547..." required>
+        </div>
+        <button type="submit" class="btn btn-success">Pay Now</button>
+    </form>
+</div>
+{% endblock body %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Stop the form from submitting the traditional way
+
+            const formData = new FormData(form);
+            const url = window.location.href; // Submit to the current URL
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    alert('Success: STK push initiated. Please check your phone.');
+                    console.log(data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred. Please check the console for details.');
+            });
+        });
+    });
+</script>
+{% endblock scripts %}

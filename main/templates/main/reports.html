@@ -1,0 +1,130 @@
+{% extends 'main/layout.html' %}
+
+{% block body %}
+{{ monthly_revenue_data|json_script:"monthly-revenue-data" }}
+{{ monthly_consumption_data|json_script:"monthly-consumption-data" }}
+
+<div class="container-fluid">
+    <h3 class="text-dark mb-4">{{ title }}</h3>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="text-primary fw-bold m-0">Total Revenue</h6>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-dark mb-0">Ksh {{ total_revenue|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="text-primary fw-bold m-0">Outstanding Payments</h6>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-dark mb-0">Ksh {{ outstanding_payments|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="text-primary fw-bold m-0">Total Consumption (m³)</h6>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-dark mb-0">{{ total_consumption|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="text-primary fw-bold m-0">Monthly Revenue</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyRevenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="text-primary fw-bold m-0">Monthly Water Consumption</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyConsumptionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Monthly Revenue Chart
+        const revenueData = JSON.parse(document.getElementById('monthly-revenue-data').textContent);
+        const revenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: revenueData.map(item => new Date(item.month).toLocaleString('default', { month: 'long', year: 'numeric' })),
+                datasets: [{
+                    label: 'Revenue (Ksh)',
+                    data: revenueData.map(item => item.total),
+                    backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return 'Ksh ' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Monthly Consumption Chart
+        const consumptionData = JSON.parse(document.getElementById('monthly-consumption-data').textContent);
+        const consumptionCtx = document.getElementById('monthlyConsumptionChart').getContext('2d');
+        new Chart(consumptionCtx, {
+            type: 'line',
+            data: {
+                labels: consumptionData.map(item => new Date(item.month).toLocaleString('default', { month: 'long', year: 'numeric' })),
+                datasets: [{
+                    label: 'Consumption (m³)',
+                    data: consumptionData.map(item => item.total),
+                    backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                    borderColor: 'rgba(28, 200, 138, 1)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return value.toLocaleString() + ' m³';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

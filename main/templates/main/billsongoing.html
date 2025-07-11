@@ -1,0 +1,123 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+{% block body %}
+<div class="container-fluid">
+    {% if request.user.is_superuser %}
+    <div class="d-flex"> 
+        <h1 class="h3 mb-2 text-primary font-weight-bolder">Ongoing Bills</h1><br>
+        <a class="ml-auto btn btn-primary mb-3" data-toggle="modal" data-target="#Addmodal">Add</a> 
+    </div>
+    {% else %}
+    <div class="text-center"> 
+        <h1 class="h3 mb-2 text-primary font-weight-bolder">Ongoing Bills</h1><br>
+    </div>
+    {% endif %}
+
+
+    <div class="card shadow mb-4" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-in-out">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary text-center">Ongoing Bills Data Table</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered tally-table" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Cubic Meter Consumption</th>
+                            <th>Consumption Cost</th>
+                            <th>Due Date</th>
+                            <th>Penalty Date</th>
+                            <th>Penalty</th>
+                            <th>Payable Amount</th>
+                            <th>Pay Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       {% for bill in ongoingbills %}
+                        <tr>
+                            <td> {{bill.name}} </td>
+                            <td> {{bill.meter_consumption}} cu.m</td> 
+                            <td> KSh{{bill.compute_bill}}</td> 
+                            <td> {{bill.duedate}} </td> 
+                            <td> {{bill.penaltydate}} </td> 
+                            <td> {{bill.penalty}}</td> 
+                            <td class="font-weight-bolder text-primary"> KSh{{bill.payable}} </td> 
+                            <td> {{bill.status}}</td>
+                            <td class="text-center">
+                                {% if request.user.is_superuser %}
+                                <form method="POST" action="">
+                                    {% csrf_token %}
+                                    <input name="contact_number" type="text" value="{{bill.name.contact_number}}" hidden>
+                                    <input name="total_bill" type="text" value="{{bill.payable}}" hidden>
+                                    <input name="due_date" type="text" value="{{bill.duedate}}" hidden>   
+                                    <input name="penalty_date" type="text" value="{{bill.penaltydate}}" hidden>
+                                    <button name="notify" class="btn btn-primary" type="submit"> 
+                                        <i class="fa-solid fa-envelope"></i>
+                                    </button>
+                                    <a href="{% url 'update_bills' bill.id %}" class="btn btn-primary"><i class="fas fa-edit"></i></a>
+                                    <a href="{% url 'delete_bills' bill.id %}" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i></a>
+                                </form>
+                                {% endif %}
+                                {% if bill.status != 'Paid' %}
+                                <a href="{% url 'initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm">Pay with M-Pesa</a>
+                                {% endif %}
+                            </td>
+                        </tr>   
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+{% if request.user.is_superuser %}
+
+<div class="modal fade" id="Addmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Add</b></h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="reader"> </div>
+                <form name="attendance" action="" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group mt-3">
+                        <label>Name: </label> <br>
+                        {{ form.name }}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Meter Consumption: </label> <br>
+                        {{ form.meter_consumption }}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Pay Status: </label> <br>
+                        {{ form.status }}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Due Date: </label> <br>
+                        {{ form.duedate }}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Penalty Date: </label> <br>
+                        {{ form.penaltydate }}
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="submit">Confirm</button>
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'main/layout.html' %}
+
+{% block body %}
+<div class="container">
+    <div class="card o-hidden border-0 shadow-lg my-5">
+        <div class="card-body p-0">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="p-5">
+                        <div class="text-center">
+                            <h1 class="h4 text-gray-900 mb-4">Update Profile</h1>
+                        </div>
+                                                <form class="user" method="post">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ account_form.first_name.label_tag }}
+                                        {{ account_form.first_name }}
+                                    </div>
+                                    <div class="form-group">
+                                        {{ account_form.last_name.label_tag }}
+                                        {{ account_form.last_name }}
+                                    </div>
+                                    <div class="form-group">
+                                        {{ account_form.email.label_tag }}
+                                        {{ account_form.email }}
+                                    </div>
+                                    <div class="form-group">
+                                        {{ account_form.phone_number.label_tag }}
+                                        {{ account_form.phone_number }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if client_form %}
+                                        <div class="form-group">
+                                            {{ client_form.middle_name.label_tag }}
+                                            {{ client_form.middle_name }}
+                                        </div>
+                                        <div class="form-group">
+                                            {{ client_form.contact_number.label_tag }}
+                                            {{ client_form.contact_number }}
+                                        </div>
+                                        <div class="form-group">
+                                            {{ client_form.address.label_tag }}
+                                            {{ client_form.address }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-group">
+                                        {{ account_form.password.label_tag }}
+                                        {{ account_form.password }}
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-user btn-block">
+                                Update Profile
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock body %}
