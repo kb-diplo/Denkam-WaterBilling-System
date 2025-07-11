@@ -1,0 +1,31 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+
+# Environment
+.env
+
+# Static files
+/static
+
+# Media files
+/media
+
+# Virtualenv
+venv/
+.venv/
+env/
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Other
+.DS_Store
+.env
+db.sqlite3
+.vercel
