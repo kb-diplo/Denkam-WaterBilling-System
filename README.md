@@ -42,7 +42,7 @@ A comprehensive water billing system designed for efficient management of custom
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/kb-diplo/Denkam-WaterBilling-System.git
     cd WaterBilling-master
     ```
 
