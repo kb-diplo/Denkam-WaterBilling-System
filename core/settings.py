@@ -17,7 +17,7 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
 
 CORS_ALLOWED_ORIGINS = ['http://localhost:8000']
 
-ALLOWED_HOSTS = ['.vercel.app', '127.0.0.1', os.environ.get('VERCEL_URL', 'localhost')]
+ALLOWED_HOSTS = ['.vercel.app', '127.0.0.1', 'web-production-cc66.up.railway.app', os.environ.get('VERCEL_URL', 'localhost')]
 
 AUTH_USER_MODEL = 'account.Account'
 LOGOUT_REDIRECT_URL = '/'
