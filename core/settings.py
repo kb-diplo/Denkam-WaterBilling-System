@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'sweetify',
     'corsheaders',
     'bootstrap_modal_forms',
+    'widget_tweaks',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
