@@ -72,6 +72,8 @@ A comprehensive water billing system designed for efficient management of custom
     python manage.py createsuperuser
     ```
 
+python manage.py collectstatic --noinput
+
 6.  **Run the development server:**
     ```bash
     python manage.py runserver

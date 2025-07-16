@@ -1,4 +1,6 @@
-Django>=4.2
+Django==5.2.4
+django-bootstrap5==24.2
+django-recaptcha==3.0.0
 asgiref
 dj-database-url>=1.2.0
 django-bootstrap-modal-forms
@@ -15,3 +17,4 @@ Pillow
 qrcode
 requests
 setuptools
+reportlab
