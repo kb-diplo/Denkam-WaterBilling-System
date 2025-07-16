@@ -1,12 +1,12 @@
 {% extends 'main/layout.html' %}
 {% load static %}
 
-{% block body %}
+{% block content %}
 <div class="container-fluid">
     <h3 class="text-dark mb-4">{{ title }}</h3>
     <div class="card shadow">
         <div class="card-header py-3">
-            <p class="text-primary m-0 fw-bold">Billing History for {% if client %}{{ client.name.first_name }} {{ client.name.last_name }}{% else %}Guest{% endif %}</p>
+            <p class="text-primary m-0 fw-bold">Billing History for {{ client.first_name }} {{ client.last_name }}</p>
         </div>
         <div class="card-body">
             <div class="table-responsive table mt-2" id="dataTable" role="grid" aria-describedby="dataTable_info">
@@ -47,4 +47,4 @@
         </div>
     </div>
 </div>
-{% endblock body %}
+{% endblock content %}

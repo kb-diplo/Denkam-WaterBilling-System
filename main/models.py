@@ -21,8 +21,8 @@ class Client(models.Model):
 class WaterBill(models.Model):
     created_by = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_bills')
     name = models.ForeignKey(Client, on_delete=models.CASCADE)
-    reading = models.BigIntegerField(null=True)
-    meter_consumption = models.BigIntegerField(null=True)
+    reading = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    meter_consumption = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     status = models.TextField(choices=(('Paid','Paid'),('Pending', 'Pending')), default='Pending', null=True)
     duedate = models.DateField(null=True)
     penaltydate = models.DateField(null=True)
@@ -30,25 +30,27 @@ class WaterBill(models.Model):
     checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
 
     
+    @property
+    def metrics(self):
+        if not hasattr(self, '_metrics'):
+            self._metrics = Metric.objects.first()
+        return self._metrics
+
     def compute_bill(self):
-        metric = Metric.objects.get(id=1)
-        consump_amount = metric.consump_amount
-        return self.meter_consumption * consump_amount
+        if self.metrics and self.metrics.consump_amount and self.meter_consumption is not None:
+            return self.meter_consumption * self.metrics.consump_amount
+        return 0
 
     def penalty(self):
-        if self.penaltydate == datetime.date.today():
-            metric = Metric.objects.get(id=1)
-            penalty_cost = metric.penalty_amount
-            return penalty_cost
-        else:
-            return 0
+        if self.metrics and self.metrics.penalty_amount and self.penaltydate == datetime.date.today():
+            return self.metrics.penalty_amount
+        return 0
 
     
     def payable(self):
-        if self.penalty:
-            return self.compute_bill() + self.penalty()
-        else:
-            return self.compute_bill()
+        bill = self.compute_bill()
+        pen = self.penalty()
+        return bill + pen
 
 
     def __str__(self):
@@ -56,5 +58,19 @@ class WaterBill(models.Model):
 
 
 class Metric(models.Model):
-    consump_amount = models.FloatField(default=1, null=True)
-    penalty_amount = models.FloatField(default=1, null=True)
+    consump_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, null=True)
+    penalty_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, null=True)
+
+
+class MpesaPayment(models.Model):
+    bill = models.ForeignKey(WaterBill, on_delete=models.CASCADE, related_name='mpesa_payments', null=True)
+    transaction_id = models.CharField(max_length=50, unique=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    phone_number = models.CharField(max_length=15, null=True)
+    checkout_request_id = models.CharField(max_length=100)
+    result_code = models.IntegerField()
+    result_desc = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment {self.transaction_id} for bill {self.bill.id if self.bill else 'N/A'}"

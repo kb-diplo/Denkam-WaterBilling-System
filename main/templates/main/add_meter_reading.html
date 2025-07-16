@@ -1,0 +1,28 @@
+{% extends 'main/layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ title }}</h3>
+                </div>
+                <div class="card-body">
+                    <p><strong>Client:</strong> {{ client.first_name }} {{ client.last_name }}</p>
+                    <p><strong>Address:</strong> {{ client.address }}</p>
+                    <p><strong>Last Reading:</strong> {{ last_reading }}</p>
+                    <hr>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="id_reading">New Meter Reading</label>
+                            {{ form.reading }}
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Submit Reading</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

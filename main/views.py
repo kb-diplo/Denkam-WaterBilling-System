@@ -1,22 +1,30 @@
-from django.shortcuts import render, redirect, HttpResponseRedirect, HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 import datetime
-from .models import *
+from .forms import BillForm, ClientUpdateForm, ClientForm, MetricsForm, MeterReadingForm
 from account.models import *
 from .forms import *
 from .mpesa_utils import initiate_stk_push
 from django.db.models import F, Sum
 import sweetify
 import json
-from account.forms import *
+from account.forms import MeterReaderClientCreationForm
 from account.decorators import admin_required, customer_or_admin_required, customer_required, admin_or_meter_reader_required, meter_reader_required
 from .decorators import client_facing_login_required
 from django.utils import timezone
 from collections import defaultdict
+import io
+from django.http import FileResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 
 
 def landingpage(request):
@@ -28,6 +36,7 @@ def landingpage(request):
 def dashboard(request):
     paid_bills_count = WaterBill.objects.filter(status='Paid').count()
     pending_bills_count = WaterBill.objects.filter(status='Pending').count()
+    meter_readers_count = Account.objects.filter(role='METER_READER').count()
 
     billing_data = {
         'paid': paid_bills_count,
@@ -44,6 +53,7 @@ def dashboard(request):
         'paid_bills_count': paid_bills_count,
         'pending_bills_count': pending_bills_count,
         'billing_data': billing_data,
+        'meter_readers_count': meter_readers_count,
     }
     return render(request, 'main/dashboard.html', context)
 
@@ -77,7 +87,7 @@ def meter_reader_dashboard(request):
         'pending_clients_count': pending_clients_count,
         'billed_client_ids': list(billed_client_ids),
     }
-    return render(request, 'main/meter_reader_dashboard.html', context)
+    return render(request, 'account/meter_reader_dashboard.html', context)
 
 
 @login_required(login_url='login')
@@ -101,20 +111,15 @@ def client_dashboard(request):
 @login_required(login_url='login')
 @customer_or_admin_required
 def ongoing_bills(request):
+    if request.user.role == Account.Role.ADMIN:
+        ongoing_bills = WaterBill.objects.filter(status='Pending')
+    else:
+        ongoing_bills = WaterBill.objects.filter(name__name_id=request.user.id, status='Pending')
+
     context = {
         'title': 'Ongoing Bills',
-        'ongoingbills': WaterBill.objects.filter(status='Pending') if request.user.role == Account.Role.ADMIN else WaterBill.objects.filter(name__name_id=request.user.id, status='Pending'),
-        'form': BillForm()
+        'ongoingbills': ongoing_bills,
     }
-    if request.method == 'POST':
-        try: 
-            billform = BillForm(request.POST)
-            if billform.is_valid():
-                billform.save()
-                sweetify.toast(request, 'Successfully Added.')
-                return HttpResponseRedirect(request.path_info)
-        except:
-            sweetify.toast(request, 'Invalid Details', icon='error')
 
     return render(request, 'main/billsongoing.html', context)
 
@@ -122,10 +127,14 @@ def ongoing_bills(request):
 @login_required(login_url='login')
 @customer_or_admin_required
 def history_bills(request):
+    if request.user.role == Account.Role.ADMIN:
+        bills_history = WaterBill.objects.filter(status='Paid')
+    else:
+        bills_history = WaterBill.objects.filter(name__name=request.user, status='Paid')
+
     context = {
         'title': 'Bills History',
-        'billshistory': WaterBill.objects.filter(status='Paid') if request.user.role == Account.Role.ADMIN else WaterBill.objects.filter(name__name=request.user, status='Paid'),
-        'form': BillForm()
+        'billshistory': bills_history,
     }
     return render(request, 'main/billshistory.html', context)
 
@@ -220,16 +229,11 @@ def profile(request, pk):
     return render(request, 'main/profile.html', context)
 
 @login_required(login_url='login')
-
-@login_required(login_url='login')
 @admin_required
 def users(request):
-    # Get all non-admin users
-    all_users = Account.objects.filter(is_superuser=False)
-
-    # Separate users by role
-    meter_readers = all_users.filter(role=Account.Role.METER_READER)
-    clients = all_users.filter(role=Account.Role.CUSTOMER)
+    # Get all non-admin users who are meter readers
+    meter_readers = Account.objects.filter(is_superuser=False, role=Account.Role.METER_READER)
+    clients = Account.objects.filter(is_superuser=False, role=Account.Role.CUSTOMER)
 
     context = {
         'title': 'Users',
@@ -290,72 +294,85 @@ def delete_user(request, pk):
 @login_required(login_url='login')
 @admin_or_meter_reader_required
 def clients(request):
-    form = ClientForm()
-    context = {
-        'title': 'Clients',
-        'clients': Client.objects.all(),
-        'form': form,
-    }
     if request.method == 'POST':
         form = ClientForm(request.POST)
         if form.is_valid():
-            form.save()
-            sweetify.toast(request, 'Successfully Added.')
-            return HttpResponseRedirect(request.path_info)
-        else:
-            sweetify.toast(request, 'Invalid Details', icon='error')
+            instance = form.save(commit=False)
+            user = Account.objects.create_user(
+                first_name=form.cleaned_data.get('first_name'),
+                last_name=form.cleaned_data.get('last_name'),
+                email=form.cleaned_data.get('email'),
+                password=form.cleaned_data.get('password'),
+                role='CUSTOMER'
+            )
+            instance.name = user
+            instance.save()
+            sweetify.success(request, 'New client has been added.')
+            return redirect('clients')
+    else:
+        form = ClientForm()
 
+    all_clients = Client.objects.all()
+    context = {
+        'title': 'Clients',
+        'clients': all_clients,
+        'form': form
+    }
     return render(request, 'main/clients.html', context)
 
 @login_required(login_url='login')
 @admin_required
-def client_delete(request,pk):
-    client = Client.objects.get(pk=pk)
-    user = Account.objects.get(pk=client.name.id)
-    user.delete()
-    client.delete()
-    sweetify.toast(request, 'Successfully Deleted.')
-    return redirect('clients')
-
-@login_required(login_url='login')
-@admin_or_meter_reader_required
-def client_update(request,pk):
-    client = Client.objects.get(id=pk)
-    form = ClientForm(instance=client)
-    context = {
-        'title': 'Update Client',
-        'client': client,
-        'form': form
-    }
-    if request.method == 'POST':
-        form = ClientForm(request.POST, instance=client)
-        if form.is_valid():
-            form.save()
-            sweetify.success(request, 'Client updated successfully!', persistent=True)
-            return HttpResponseRedirect(reverse('clients'))
-        else:
-            error_list = []
-            for field, errors in form.errors.items():
-                for error in errors:
-                    error_list.append(f"{field.replace('_', ' ').title()}: {error}")
-            error_message = "Update failed. " + " ".join(error_list)
-            sweetify.error(request, error_message, persistent=True)
-    return render(request, 'main/clientupdate.html', context)
-
-
-@login_required(login_url='login')
-@admin_required
-def client_delete(request,pk):
-    client = Client.objects.get(id=pk)
+def client_delete(request, pk):
+    client = get_object_or_404(Client, pk=pk)
     context = {
         'title': 'Delete Client',
         'client': client,
     }
     if request.method == 'POST':
+        # The associated user account should also be deleted or handled appropriately
+        # For example, if the client is linked to an Account via a OneToOneField named 'user_account'
+        if hasattr(client, 'name') and client.name:
+            client.name.delete() # This assumes 'name' is the related user account
         client.delete()
-        sweetify.toast(request, 'Client deleted successfully')
-        return HttpResponseRedirect(reverse('clients'))
+        sweetify.success(request, 'Client deleted successfully!')
+        return redirect('clients')
+    
     return render(request, 'main/clientdelete.html', context)
+
+
+@login_required(login_url='login')
+@admin_required
+def client_billing_history(request, pk):
+    client = get_object_or_404(Client, id=pk)
+    bills = WaterBill.objects.filter(name=client).order_by('-created_on')
+    context = {
+        'title': f'Billing History - {client.first_name} {client.last_name}',
+        'client': client,
+        'bills': bills
+    }
+    return render(request, 'main/client_billing_history.html', context)
+
+@login_required(login_url='login')
+@admin_or_meter_reader_required
+def client_update(request,pk):
+    client = get_object_or_404(Client, id=pk)
+    if request.method == 'POST':
+        form = ClientUpdateForm(request.POST, instance=client)
+        if form.is_valid():
+            form.save()
+            sweetify.success(request, 'Client updated successfully!')
+            return redirect('clients')
+        else:
+            sweetify.error(request, 'Please correct the errors below.')
+    else:
+        form = ClientUpdateForm(instance=client)
+
+    context = {
+        'title': 'Update Client',
+        'client': client,
+        'form': form
+    }
+    return render(request, 'main/clientupdate.html', context)
 
 
 
@@ -388,114 +405,128 @@ def metricsupdate(request, pk):
 @login_required(login_url='login')
 @admin_or_meter_reader_required
 def meter_reading(request):
-    form = MeterReadingForm()
-    if request.method == 'POST':
-        form = MeterReadingForm(request.POST)
-        if form.is_valid():
-            client = form.cleaned_data['client']
-            reading = form.cleaned_data['reading']
-            
-            # Create a new WaterBill instance and assign the current user
-            WaterBill.objects.create(
-                name=client,
-                created_by=request.user,
-                meter_consumption=reading,
-                status='Pending',
-                duedate=datetime.date.today() + datetime.timedelta(days=15),
-                penaltydate=datetime.date.today() + datetime.timedelta(days=30)
-            )
-            
-            sweetify.success(request, 'Meter reading submitted successfully.')
-            return HttpResponseRedirect(reverse('ongoingbills'))
+    clients = Client.objects.select_related('name').all()
+    query = request.GET.get('q')
+    if query:
+        clients = clients.filter(
+            Q(name__first_name__icontains=query) |
+            Q(name__last_name__icontains=query) |
+            Q(name__email__icontains=query) |
+            Q(id__icontains=query)
+        ).distinct()
+
+    paginator = Paginator(clients, 10)  # Show 10 clients per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get billed client IDs for the current month
+    now = timezone.now()
+    billed_client_ids = WaterBill.objects.filter(
+        created_on__year=now.year,
+        created_on__month=now.month
+    ).values_list('name_id', flat=True)
 
     context = {
-        'title': 'Meter Reading',
-        'form': form
+        'title': 'Meter Reading - Select Client',
+        'page_obj': page_obj,
+        'query': query,
+        'billed_client_ids': list(billed_client_ids),
     }
     return render(request, 'main/meter_reading.html', context)
 
-@login_required
-def client_bill_history(request):
-    if request.user.is_superuser:
-        return redirect('billshistory')
-    
-    try:
-        client = Client.objects.get(name=request.user)
-        bills = WaterBill.objects.filter(name=client).order_by('-created_on')
-    except Client.DoesNotExist:
-        client = None
-        bills = []
-        sweetify.error(request, 'No client profile found for your account.')
 
+@login_required
+def client_bill_history(request, pk):
+    client = get_object_or_404(Client, id=pk)
+    bills = WaterBill.objects.filter(name=client).order_by('-created_on')
     context = {
-        'title': 'My Billing History',
+        'title': f'Billing History for {client.first_name} {client.last_name}',
         'bills': bills,
         'client': client
     }
     return render(request, 'main/client_bill_history.html', context)
 
+
 @login_required(login_url='login')
 @admin_or_meter_reader_required
-def manage_billing(request, pk):
-    client = Client.objects.get(id=pk)
+def add_meter_reading(request, client_id):
+    client = get_object_or_404(Client, id=client_id)
     now = timezone.now()
-    current_month = now.month
-    current_year = now.year
-
-    # Check if a bill already exists for the current month
-    try:
-        bill = WaterBill.objects.filter(name=client, created_on__year=current_year, created_on__month=current_month).order_by('-created_on').first()
-    except WaterBill.DoesNotExist:
-        bill = None
+    last_bill = WaterBill.objects.filter(name=client).order_by('-created_on').first()
+    last_reading = last_bill.reading if last_bill else 0
 
     if request.method == 'POST':
-        form = MeterReadingForm(request.POST, instance=bill)
+        form = MeterReadingForm(request.POST)
         if form.is_valid():
             reading = form.cleaned_data['reading']
-            
-            # Get the previous reading, excluding the current bill if it exists
-            previous_bills_qs = WaterBill.objects.filter(name=client).order_by('-created_on')
-            if bill: # If we are updating a bill, exclude it from the search for the previous one
-                previous_bills_qs = previous_bills_qs.exclude(pk=bill.pk)
-            
-            previous_bill = previous_bills_qs.first()
-            previous_reading = previous_bill.reading if previous_bill else 0
-            
-            # Calculate consumption
-            consumption = reading - previous_reading
-            
-            # Get the metric for calculation
-            metric = Metric.objects.first()
-            bill_amount = consumption * metric.consump_amount
 
-            # Create or update the bill
-            if bill:
+            if reading < last_reading:
+                sweetify.error(request, f'New reading cannot be less than the previous reading of {last_reading}.')
+            else:
+                consumption = reading - last_reading
+                WaterBill.objects.create(
+                    name=client,
+                    reading=reading,
+                    meter_consumption=consumption,
+                    created_by=request.user,
+                    status='Pending',
+                    duedate=now.date() + datetime.timedelta(days=15),
+                    penaltydate=now.date() + datetime.timedelta(days=30)
+                )
+                sweetify.success(request, 'New meter reading has been recorded.', persistent='OK')
+                return redirect('clients')
+        else:
+            sweetify.error(request, 'Please correct the error below.')
+    else:
+        form = MeterReadingForm()
+
+    context = {
+        'form': form,
+        'client': client,
+        'title': f'Add Meter Reading for {client.first_name} {client.last_name}',
+        'last_reading': last_reading
+    }
+    return render(request, 'main/add_meter_reading.html', context)
+
+
+@login_required(login_url='login')
+@admin_or_meter_reader_required
+def manage_billing(request, client_id):
+    client = get_object_or_404(Client, id=client_id)
+    bill = WaterBill.objects.filter(name=client).order_by('-created_on').first()
+
+    if not bill:
+        sweetify.error(request, 'No billing record found for this client. Please add a new meter reading first.', persistent='OK')
+        return redirect('clients')
+
+    # This is the bill before the one we are editing.
+    previous_bill = WaterBill.objects.filter(name=client, created_on__lt=bill.created_on).order_by('-created_on').first()
+    previous_reading = previous_bill.reading if previous_bill else 0
+
+    if request.method == 'POST':
+        form = MeterReadingForm(request.POST)
+        if form.is_valid():
+            reading = form.cleaned_data['reading']
+            if reading < previous_reading:
+                sweetify.error(request, f'Current reading cannot be less than the previous reading of {previous_reading}.')
+            else:
+                consumption = reading - previous_reading
                 bill.reading = reading
                 bill.meter_consumption = consumption
                 bill.save()
-                sweetify.success(request, 'Billing information updated successfully.')
-            else:
-                new_bill = form.save(commit=False)
-                new_bill.name = client
-                new_bill.created_by = request.user
-                new_bill.status = 'Pending'
-                new_bill.duedate = now.date() + datetime.timedelta(days=15)
-                new_bill.penaltydate = now.date() + datetime.timedelta(days=30)
-                new_bill.save()
-                sweetify.success(request, 'New meter reading has been recorded.')
-            
-            return redirect('meter_reader_dashboard')
+                sweetify.success(request, 'Billing information updated successfully.', persistent='OK')
+                return redirect('clients')
+        else:
+             sweetify.error(request, 'Please correct the error below.')
     else:
-        form = MeterReadingForm(instance=bill)
-
-    previous_bill = WaterBill.objects.filter(name=client).order_by('-created_on').first()
+        form = MeterReadingForm(initial={'reading': bill.reading})
 
     context = {
-        'title': 'Manage Billing',
+        'title': f'Edit Billing for {client.first_name} {client.last_name}',
         'client': client,
         'form': form,
-        'previous_bill': previous_bill,
-        'bill': bill
+        'bill': bill,
+        'previous_bill': previous_bill
     }
     return render(request, 'main/manage_billing.html', context)
 
@@ -504,18 +535,38 @@ from django.db.models.functions import TruncMonth
 @login_required(login_url='login')
 @admin_required
 def reports(request):
+    metric = Metric.objects.first()
+    consump_amount = metric.consump_amount if metric else 1.0
+    penalty_amount = metric.penalty_amount if metric else 0.0
+
     paid_bills = WaterBill.objects.filter(status='Paid').order_by('created_on')
     pending_bills = WaterBill.objects.filter(status='Pending')
-    
-    total_revenue = sum(bill.payable() for bill in paid_bills)
-    outstanding_payments = sum(bill.payable() for bill in pending_bills)
+
+    # Calculate total revenue from paid bills using aggregation
+    total_revenue = paid_bills.aggregate(
+        total=Sum(F('meter_consumption') * consump_amount)
+    )['total'] or 0
+
+    # Calculate outstanding payments from pending bills using aggregation
+    outstanding_payments = pending_bills.aggregate(
+        total=Sum(F('meter_consumption') * consump_amount)
+    )['total'] or 0
+
+    # Add penalties for pending bills due today
+    today = timezone.now().date()
+    penalty_for_pending = pending_bills.filter(penaltydate=today).count() * penalty_amount
+    outstanding_payments += penalty_for_pending
+
     total_consumption = WaterBill.objects.aggregate(total=Sum('meter_consumption'))['total'] or 0
 
     # Monthly revenue chart data
     monthly_revenue_dict = defaultdict(float)
     for bill in paid_bills:
         month_key = bill.created_on.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        monthly_revenue_dict[month_key] += bill.payable()
+        bill_total = (bill.meter_consumption * consump_amount)
+        if bill.penaltydate == bill.created_on.date(): # A simplified assumption for penalty
+            bill_total += penalty_amount
+        monthly_revenue_dict[month_key] += bill_total
     monthly_revenue = [{'month': month, 'total': total} for month, total in sorted(monthly_revenue_dict.items())]
 
     # Billing status chart data
@@ -532,6 +583,17 @@ def reports(request):
         'pending_bills_count': pending_bills_count,
     }
     return render(request, 'main/reports.html', context)
+
+
+@login_required
+@admin_required
+def payment_records(request):
+    payments = MpesaPayment.objects.all().order_by('-created_on')
+    context = {
+        'title': 'M-Pesa Payment Records',
+        'payments': payments,
+    }
+    return render(request, 'main/payment_records.html', context)
 
 
 @login_required
@@ -570,101 +632,51 @@ def initiate_mpesa_payment(request, bill_id):
 @csrf_exempt
 @require_POST
 def mpesa_callback(request):
-    payload = json.loads(request.body)
-    checkout_request_id = payload.get('Body', {}).get('stkCallback', {}).get('CheckoutRequestID')
-    result_code = payload.get('Body', {}).get('stkCallback', {}).get('ResultCode')
-
-    if checkout_request_id and result_code == 0:
-        try:
-            bill = WaterBill.objects.get(checkout_request_id=checkout_request_id)
-            bill.status = 'Paid'
-            bill.save()
-        except WaterBill.DoesNotExist:
-            pass
-    return HttpResponse(status=200)
-
-
-@login_required(login_url='login')
-@admin_required
-def register_customer(request):
-    if request.method == 'POST':
-        form = CustomerRegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            # Automatically create a client profile for the new customer
-            Client.objects.create(
-                name=user,
-                first_name=form.cleaned_data.get('first_name'),
-                last_name=form.cleaned_data.get('last_name'),
-                contact_number=form.cleaned_data.get('phone_number'),
-                address=form.cleaned_data.get('address', 'N/A'),
-                status='Pending' # Or whatever default status is appropriate
-            )
-            sweetify.success(request, 'Customer registered and client profile created successfully!')
-            return redirect('users')
-        else:
-            sweetify.error(request, 'Please correct the errors below.')
-    else:
-        form = CustomerRegistrationForm()
-    
-    context = {
-        'title': 'Register Customer',
-        'form': form
-    }
-    return render(request, 'account/register.html', context)
-
-
-
-@login_required
-def initiate_mpesa_payment(request, bill_id):
     try:
-        bill = WaterBill.objects.get(id=bill_id, name__name=request.user)
-    except WaterBill.DoesNotExist:
-        sweetify.error(request, 'Bill not found.')
-        return redirect('ongoingbills')
+        payload = json.loads(request.body)
+        stk_callback = payload.get('Body', {}).get('stkCallback', {})
+        checkout_request_id = stk_callback.get('CheckoutRequestID')
+        result_code = stk_callback.get('ResultCode')
+        result_desc = stk_callback.get('ResultDesc')
 
-    if request.method == 'POST':
-        phone_number = request.POST.get('phone_number')
-        if not phone_number:
-            sweetify.error(request, 'Phone number is required.')
-            return redirect('ongoingbills')
+        if not checkout_request_id:
+            return HttpResponse(status=400) # Bad request if no checkout ID
 
-        amount = int(bill.payable)
-        account_reference = f'BILL{bill.id}'
-        transaction_desc = f'Payment for bill {bill.id}'
-        callback_url = request.build_absolute_uri(reverse('mpesa_callback'))
+        # Log the entire callback
+        MpesaPayment.objects.create(
+            checkout_request_id=checkout_request_id,
+            result_code=result_code,
+            result_desc=result_desc,
+        )
 
-        response = initiate_stk_push(phone_number, amount, account_reference, transaction_desc, callback_url)
+        if str(result_code) == '0':
+            callback_metadata = stk_callback.get('CallbackMetadata', {}).get('Item', [])
+            amount = next((item['Value'] for item in callback_metadata if item['Name'] == 'Amount'), None)
+            transaction_id = next((item['Value'] for item in callback_metadata if item['Name'] == 'MpesaReceiptNumber'), None)
+            phone_number = next((item['Value'] for item in callback_metadata if item['Name'] == 'PhoneNumber'), None)
 
-        if response and response.get('ResponseCode') == '0':
-            bill.checkout_request_id = response['CheckoutRequestID']
-            bill.save()
-            sweetify.success(request, 'STK push initiated successfully. Please check your phone.')
-        else:
-            sweetify.error(request, 'Failed to initiate STK push. Please try again.')
-
-        return redirect('ongoingbills')
-
-    context = {
-        'title': 'Pay with M-Pesa',
-        'bill': bill
-    }
-    return render(request, 'main/pay_with_mpesa.html', context)
-
-
-@csrf_exempt
-def mpesa_callback(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        if data['Body']['stkCallback']['ResultCode'] == 0:
-            checkout_request_id = data['Body']['stkCallback']['CheckoutRequestID']
             try:
                 bill = WaterBill.objects.get(checkout_request_id=checkout_request_id)
                 bill.status = 'Paid'
                 bill.save()
+
+                # Update the payment log with bill details
+                payment = MpesaPayment.objects.get(checkout_request_id=checkout_request_id)
+                payment.bill = bill
+                payment.transaction_id = transaction_id
+                payment.amount = amount
+                payment.phone_number = phone_number
+                payment.save()
+
             except WaterBill.DoesNotExist:
-                # Handle the case where the bill is not found
+                # Handle case where bill is not found but payment was made
                 pass
+
+    except json.JSONDecodeError:
+        return HttpResponse(status=400) # Invalid JSON
+    except Exception as e:
+        # Log unexpected errors
+        return HttpResponse(status=500)
 
     return HttpResponse(status=200)
 
@@ -673,20 +685,145 @@ def mpesa_callback(request):
 @admin_or_meter_reader_required
 def register_customer(request):
     if request.method == 'POST':
-        form = CustomerRegistrationForm(request.POST)
+        form = MeterReaderClientCreationForm(request.POST)
         if form.is_valid():
-            form.save()
-            sweetify.success(request, 'Customer has been registered successfully.')
-            if request.user.is_superuser:
-                return redirect('users')
-            else:
+            # Create the user account
+            user = Account.objects.create_user(
+                email=form.cleaned_data['email'],
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+                password=form.cleaned_data['password']
+            )
+            user.role = Account.Role.CUSTOMER # Set role to Customer
+            user.save()
+
+            # Create the associated client profile
+            Client.objects.create(
+                name=user,
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+                contact_number=form.cleaned_data['contact_number'],
+                address=form.cleaned_data['address'],
+                status='Pending'
+            )
+            
+            sweetify.success(request, 'New client has been registered successfully!')
+            # Redirect based on user role
+            if request.user.role == 'METER_READER':
                 return redirect('meter_reader_dashboard')
+            else:
+                return redirect('users') # For admins
+        else:
+            sweetify.error(request, 'Please correct the errors below.')
     else:
-        form = CustomerRegistrationForm()
+        form = MeterReaderClientCreationForm()
     
     context = {
-        'title': 'Register New Customer',
+        'title': 'Register New Client',
         'form': form
     }
-    return render(request, 'main/register_customer.html', context)
+    return render(request, 'account/admin_register_user.html', context)
+
+
+
+
+
+
+
+
+
+@login_required
+def generate_bill_pdf(request, bill_id):
+    try:
+        bill = WaterBill.objects.get(id=bill_id)
+        # Ensure the user has permission to view this bill
+        is_owner = (request.user.role == Account.Role.CUSTOMER and bill.name.name == request.user)
+        is_admin = (request.user.role == Account.Role.ADMIN)
+        
+        if not (is_owner or is_admin):
+            return HttpResponse("Unauthorized", status=403)
+
+    except WaterBill.DoesNotExist:
+        return HttpResponse("Bill not found", status=404)
+
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter, bottomup=0)
+    textob = c.beginText()
+    textob.setTextOrigin(inch, inch)
+    textob.setFont("Helvetica", 14)
+
+    # Add content to the PDF
+    textob.textLine("Denkam Water Billing System")
+    textob.textLine("-" * 50)
+    textob.textLine(f"Bill ID: {bill.id}")
+    textob.textLine(f"Client: {bill.name.name.get_full_name()}")
+    textob.textLine(f"Date: {bill.created_on.strftime('%Y-%m-%d')}")
+    textob.textLine(f"Status: {bill.status}")
+    textob.textLine("-" * 50)
+    
+    # Calculate previous reading safely
+    previous_reading = 0
+    if bill.meter_consumption is not None and bill.reading is not None:
+        previous_reading = bill.reading - bill.meter_consumption
+
+    textob.textLine(f"Previous Reading: {previous_reading}")
+    textob.textLine(f"Current Reading: {bill.reading or 0}")
+    textob.textLine(f"Consumption (m³): {bill.meter_consumption or 0}")
+    textob.textLine(" ")
+    textob.textLine(f"Amount Payable: KES {bill.payable()}")
+
+    c.drawText(textob)
+    c.showPage()
+    c.save()
+    buf.seek(0)
+
+    return FileResponse(buf, as_attachment=True, filename=f'bill_{bill.id}.pdf')
+
+
+@login_required
+@admin_required
+def generate_client_list_pdf(request):
+    clients = Client.objects.select_related('name').all()
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title = Paragraph("Denkam Water Billing System - Client List", styles['h1'])
+    elements.append(title)
+    
+    # Table Data
+    data = [['ID', 'Full Name', 'Email', 'Contact', 'Address', 'Status']]
+    for client in clients:
+        data.append([
+            client.id,
+            client.name.get_full_name(),
+            client.name.email,
+            client.contact_number,
+            client.address,
+            client.status
+        ])
+        
+    # Create Table
+    table = Table(data)
+    style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ])
+    table.setStyle(style)
+    
+    elements.append(table)
+    
+    doc.build(elements)
+    
+    buffer.seek(0)
+    return FileResponse(buffer, as_attachment=True, filename='client_list.pdf')
 
