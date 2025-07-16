@@ -1,6 +1,6 @@
 {% extends 'main/layout.html' %}
 
-{% block body %}
+{% block content %}
 <div class="container-fluid">
     <div class="text-center"> 
         <h1 class="h3 mb-2 text-primary font-weight-bolder">Users</h1><br>
@@ -11,7 +11,7 @@
     <div class="card shadow mb-4" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-in-out">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Meter Readers</h6>
-            <a href="{% url 'meter_reader_register' %}" class="btn btn-primary btn-sm">Add Meter Reader</a>
+            <a href="{% url 'add_meter_reader' %}" class="btn btn-primary btn-sm">Add Meter Reader</a>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -30,7 +30,9 @@
                             <td> {{ user.last_name }}, {{user.first_name}} {% if user.middle_name %} {{user.middle_name}} {% endif %}</td>
                             <td class="text-center">
                                 <a href="{% url 'update_user' user.id %}" class="btn btn-primary btn-sm"><i class="fa-regular fa-pen-to-square"></i></a>
-                                <a href="{% url 'delete_user' user.id %}" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash-can"></i></a>
+                                <button type="button" class="btn btn-danger btn-sm delete-user-btn" data-toggle="modal" data-target="#deleteUserModal" data-user-id="{{ user.id }}" data-user-name="{{ user.first_name }} {{ user.last_name }}">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
                             </td>
                         </tr>   
                         {% empty %}
@@ -48,7 +50,7 @@
     <div class="card shadow mb-4" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-in-out">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Clients</h6>
-            <a href="{% url 'admin_register_user' %}" class="btn btn-success btn-sm">Add Client</a>
+            <a href="{% url 'clients' %}" class="btn btn-primary btn-sm">Add Client</a>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -67,7 +69,9 @@
                             <td> {{ user.last_name }}, {{user.first_name}} {% if user.middle_name %} {{user.middle_name}} {% endif %}</td>
                             <td class="text-center">
                                 <a href="{% url 'update_user' user.id %}" class="btn btn-primary btn-sm"><i class="fa-regular fa-pen-to-square"></i></a>
-                                <a href="{% url 'delete_user' user.id %}" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash-can"></i></a>
+                                <button type="button" class="btn btn-danger btn-sm delete-user-btn" data-toggle="modal" data-target="#deleteUserModal" data-user-id="{{ user.id }}" data-user-name="{{ user.first_name }} {{ user.last_name }}">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
                             </td>
                         </tr>   
                         {% empty %}
@@ -82,39 +86,44 @@
     </div>
 
 
-<div class="modal fade" id="Addmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+
+</div>
+<div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Add Event</b></h5>
-                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
+                <h5 class="modal-title" id="deleteUserModalLabel">Confirm Deletion</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form action="" method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label>Event Date:</label>
-                        {{ form.date }}
-                        
-                    </div>
-                    <div class="form-group">
-                        <label>Event Name:</label>
-                        {{ form.name }}
-                        
-                    </div>
+                Are you sure you want to delete <strong id="userNameToDelete"></strong>? This action cannot be undone.
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" type="submit">Confirm</button>
-                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-            </form>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteUserForm" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
             </div>
         </div>
     </div>
 </div>
-
-
-
-</div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.delete-user-btn').on('click', function() {
+        var userId = $(this).data('user-id');
+        var userName = $(this).data('user-name');
+        
+        $('#userNameToDelete').text(userName);
+        
+        var url = "{% url 'delete_user' 0 %}".replace('0', userId);
+        $('#deleteUserForm').attr('action', url);
+    });
+});
+</script>
+{% endblock scripts %}

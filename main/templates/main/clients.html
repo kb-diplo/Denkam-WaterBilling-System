@@ -1,11 +1,14 @@
 {% extends 'main/layout.html' %}
 {% load static %}
-{% block body %}
+{% block content %}
 <div class="container-fluid">
     {% if request.user.is_superuser %}
     <div class="d-flex"> 
         <h1 class="h3 mb-2 text-primary font-weight-bolder">Clients</h1><br>
-        <a class="ml-auto btn btn-primary mb-3" data-toggle="modal" data-target="#Addmodal">Add Client</a> 
+        <div class="ml-auto">
+            <a href="{% url 'generate_client_list_pdf' %}" class="btn btn-success mb-3 mr-2"><i class="fas fa-file-pdf"></i> Download PDF</a>
+            <a class="btn btn-primary mb-3" data-toggle="modal" data-target="#Addmodal">Add Client</a> 
+        </div>
     </div>
     {% else %}
     <div class="text-center"> 
@@ -42,13 +45,19 @@
                             <th> {{ client.contact_number}} </th>
                             <th> {{ client.address }} </th>
                             <th> {{client.status}} </th>
+                            {% if request.user.is_superuser %}
                             <td class="text-center">
-                                <a href="{% url 'manage_billing' client.id %}" class="btn btn-primary btn-sm">Manage Billing</a>
+                                <a href="{% url 'add_meter_reading' client.id %}" class="btn btn-sm btn-success">Add New Reading</a>
+                                <a href="{% url 'manage_billing' client.id %}" class="btn btn-sm btn-primary">Manage Billing</a>
+                                <a href="{% url 'client_billing_history' client.id %}" class="btn btn-sm btn-info">View History</a>
                                 {% if request.user.role == 'ADMIN' %}
-                                <a href="{% url 'client_update' client.id %}" class="btn btn-info btn-sm">Update</a>
-                                <a href="{% url 'client_delete' client.id %}" class="btn btn-danger btn-sm">Delete</a>
+                                <a href="{% url 'client_update' client.id %}" class="btn btn-sm btn-warning">Update</a>
+                                <button type="button" class="btn btn-danger btn-sm delete-client-btn" data-toggle="modal" data-target="#deleteClientModal" data-url="{% url 'client_delete' client.id %}" data-client-name="{{ client.first_name }} {{ client.last_name }}">
+                                    Delete
+                                </button>
                                 {% endif %}
                             </td>
+                            {% endif %}
                         </tr>   
                         {% endfor %}
                     </tbody>
@@ -70,42 +79,72 @@
             </div>
             <div class="modal-body">
                 <div id="reader"> </div>
-                <form action="" method="POST" class="user" enctype="multipart/form-data">
+                <form action="" method="POST" class="user" novalidate>
                     {% csrf_token %}
-                    <div class="form-group mt-3">
-                        <label>Meter Number: </label> <br>
-                        {{ form.meter_number }}
+                    {% load widget_tweaks %}
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                            {% render_field form.first_name class="form-control" %}
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="{{ form.middle_name.id_for_label }}">Middle Name</label>
+                            {% render_field form.middle_name class="form-control" %}
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                            {% render_field form.last_name class="form-control" %}
+                        </div>
                     </div>
-                    <div class="form-group mt-3">
-                        <label>First Name: </label> <br>
-                        {{ form.first_name }}
+
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}">Email</label>
+                        {% render_field form.email class="form-control" %}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
                     </div>
-                    <div class="form-group mt-3">
-                        <label>Middle Name: </label> <br>
-                        {{ form.middle_name }}
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="{{ form.password.id_for_label }}">Password</label>
+                            {% render_field form.password class="form-control" %}
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="{{ form.confirm_password.id_for_label }}">Confirm Password</label>
+                            {% render_field form.confirm_password class="form-control" %}
+                        </div>
                     </div>
-                    <div class="form-group mt-3">
-                        <label>Last Name: </label> <br>
-                        {{ form.last_name }}
+                    {% for error in form.non_field_errors %}
+                        <p class="text-danger text-xs">{{ error }}</p>
+                    {% endfor %}
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="{{ form.meter_number.id_for_label }}">Meter Number</label>
+                            {% render_field form.meter_number class="form-control" %}
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="{{ form.contact_number.id_for_label }}">Contact Number</label>
+                            {% render_field form.contact_number class="form-control" %}
+                        </div>
                     </div>
-                    
-                    <div class="form-group mt-3">
-                        <label>Contact Number: </label> <br>
-                        {{ form.contact_number }}
+
+                    <div class="form-group">
+                        <label for="{{ form.address.id_for_label }}">Address</label>
+                        {% render_field form.address class="form-control" %}
                     </div>
-                    <div class="form-group mt-3">
-                        <label>Address: </label> <br>
-                        {{ form.address }}
+
+                    <div class="form-group">
+                        <label for="{{ form.status.id_for_label }}">Connection Status</label>
+                        {% render_field form.status class="form-control" %}
                     </div>
-                    <div class="form-group mt-3">
-                        <label>Connection Status: </label> <br>
-                        {{ form.status }}
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-primary" type="submit">Add Client</button>
                     </div>
-                
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" type="submit">Confirm</button>
-                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
                 </form>
             </div>
         </div>
@@ -114,8 +153,61 @@
 
 {% endif %}
 
+<!-- Delete Client Modal -->
+<div class="modal fade" id="deleteClientModal" tabindex="-1" role="dialog" aria-labelledby="deleteClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteClientModalLabel">Confirm Deletion</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the client <strong id="clientName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteClientForm" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
-{% endblock %}
+
+</div>
+<div id="django-context" data-show-modal="{% if form.errors %}true{% else %}false{% endif %}"></div>
+{% endblock content %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const context = document.getElementById('django-context');
+        const showModal = context.getAttribute('data-show-modal') === 'true';
+
+        if (showModal) {
+            $('#addClientModal').modal('show');
+        }
+
+        // Handle delete client modal
+        const deleteButtons = document.querySelectorAll('.delete-client-btn');
+        const deleteForm = document.getElementById('deleteClientForm');
+        const clientNameSpan = document.getElementById('clientName');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const url = this.getAttribute('data-url');
+                const clientName = this.getAttribute('data-client-name');
+                deleteForm.setAttribute('action', url);
+                clientNameSpan.textContent = clientName;
+            });
+        });
+    });
+</script>
+{% endblock scripts %}
 
 
 

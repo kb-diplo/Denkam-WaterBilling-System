@@ -5,7 +5,7 @@
     {% if request.user.is_superuser %}
     <div class="d-flex"> 
         <h1 class="h3 mb-2 text-primary font-weight-bolder">Ongoing Bills</h1><br>
-        <a class="ml-auto btn btn-primary mb-3" data-toggle="modal" data-target="#Addmodal">Add</a> 
+
     </div>
     {% else %}
     <div class="text-center"> 
@@ -60,9 +60,10 @@
                                     <a href="{% url 'delete_bills' bill.id %}" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i></a>
                                 </form>
                                 {% endif %}
-                                {% if bill.status != 'Paid' %}
+                                {% if bill.status != 'Paid' and not request.user.is_superuser %}
                                 <a href="{% url 'initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm">Pay with M-Pesa</a>
                                 {% endif %}
+                                <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-success"><i class="fas fa-file-pdf"></i></a>
                             </td>
                         </tr>   
                         {% endfor %}
@@ -72,52 +73,7 @@
         </div>
     </div>
 
-{% if request.user.is_superuser %}
 
-<div class="modal fade" id="Addmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Add</b></h5>
-                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div id="reader"> </div>
-                <form name="attendance" action="" method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="form-group mt-3">
-                        <label>Name: </label> <br>
-                        {{ form.name }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Meter Consumption: </label> <br>
-                        {{ form.meter_consumption }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Pay Status: </label> <br>
-                        {{ form.status }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Due Date: </label> <br>
-                        {{ form.duedate }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Penalty Date: </label> <br>
-                        {{ form.penaltydate }}
-                    </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" type="submit">Confirm</button>
-                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% endif %}
 
 </div>
 {% endblock %}

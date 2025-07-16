@@ -1,0 +1,51 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-primary font-weight-bolder">Billing History for {{ client.first_name }} {{ client.last_name }}</h1>
+        <a href="{% url 'clients' %}" class="btn btn-secondary">Back to Client List</a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary text-center">All Billing Records</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Billing Date</th>
+                            <th>Meter Reading</th>
+                            <th>Consumption (m³)</th>
+                            <th>Amount (KES)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <tr>
+                            <td>{{ bill.created_on|date:"Y-m-d" }}</td>
+                            <td>{{ bill.reading }}</td>
+                            <td>{{ bill.meter_consumption }}</td>
+                            <td>{{ bill.compute_bill|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge badge-{% if bill.status == 'Paid' %}success{% elif bill.status == 'Pending' %}warning{% else %}danger{% endif %}">
+                                    {{ bill.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No billing records found for this client.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

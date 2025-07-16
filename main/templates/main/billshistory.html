@@ -44,6 +44,7 @@
                             <td class="text-center">  
                                 <a href="{% url 'update_bills' bill.id %}" class="btn btn-primary"><i class="fa-regular fa-pen-to-square"></i></a>
                                 <a href="{% url 'delete_bills' bill.id %}" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i></a>
+                                <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-success"><i class="fas fa-file-pdf"></i></a>
                             </td>
                             {% endif %}
                         </tr>   

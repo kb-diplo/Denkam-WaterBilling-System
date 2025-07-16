@@ -1,0 +1,22 @@
+{% extends 'main/layout.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card my-5">
+                <div class="card-body">
+                    <h5 class="card-title text-center">{{ title }}</h5>
+                    <p class="text-center">Are you sure you want to delete the client "{{ client.first_name }} {{ client.last_name }}"?</p>
+                    <p class="text-center text-danger">This action cannot be undone and will permanently delete the client and their associated user account.</p>
+                    <form method="POST" action="{% url 'client_delete' client.pk %}" class="text-center">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                        <a href="{% url 'clients' %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
