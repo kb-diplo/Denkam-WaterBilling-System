@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .decorators import admin_required, meter_reader_required
-from .forms import CustomerRegistrationForm, MeterReaderRegistrationForm, RegistrationForm, VerificationForm, AdminRegistrationForm, AdminUserCreationForm
+from .forms import CustomerRegistrationForm, MeterReaderRegistrationForm, RegistrationForm, VerificationForm, AdminRegistrationForm, AdminUserCreationForm, MeterReaderCreationForm
 from main.models import *
 from django.conf import settings
 import sweetify
@@ -199,9 +199,9 @@ def admin_register_user_view(request):
                 email=form.cleaned_data['email'],
                 first_name=form.cleaned_data['first_name'],
                 last_name=form.cleaned_data['last_name'],
-                password=None  # A password can be set or generated here
+                password=form.cleaned_data['password'],
+                role=role
             )
-            user.role = role
             user.save()
 
             # If the user is a customer, create their client profile
@@ -237,7 +237,7 @@ def meter_reader_register_user_view(request):
             user.role = Account.Role.CUSTOMER
             user.save()
             sweetify.success(request, 'Client account created successfully!')
-            return redirect('meter_reader_dashboard')
+            return redirect('clients')
     context = {
         'form': form,
         'title': 'Register Client'
@@ -245,8 +245,32 @@ def meter_reader_register_user_view(request):
     return render(request, 'account/register.html', context)
 
 
-def meter_reader_dashboard(request):
+
+
+
+@login_required(login_url='login')
+@admin_required
+def add_meter_reader(request):
+    if request.method == 'POST':
+        form = MeterReaderCreationForm(request.POST)
+        if form.is_valid():
+            Account.objects.create_user(
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+                email=form.cleaned_data['email'],
+                password=form.cleaned_data['password'],
+                role=Account.Role.METER_READER,
+                verified=True
+            )
+            sweetify.success(request, 'Meter Reader account created successfully.')
+            return redirect('users')
+        else:
+            sweetify.error(request, 'Please correct the errors below.')
+    else:
+        form = MeterReaderCreationForm()
+
     context = {
-        'title': 'Meter Reader Dashboard'
+        'form': form,
+        'title': 'Add Meter Reader'
     }
-    return render(request, 'account/meter_reader_dashboard.html', context)
+    return render(request, 'account/add_meter_reader.html', context)

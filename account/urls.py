@@ -13,8 +13,9 @@ urlpatterns = [
     path('register/', views.customer_register_view, name='register'),
     path('register/meter-reader/', views.meter_reader_register_view, name='meter_reader_register'),
     path('register/admin/', views.admin_register_view, name='admin_register'),
+    path('add-meter-reader/', views.add_meter_reader, name='add_meter_reader'),
     path('verify', views.verify, name="verify"),
-    path('dashboard/meter-reader/', views.meter_reader_dashboard, name='meter_reader_dashboard'),
+
     path('admin/register_user/', views.admin_register_user_view, name='admin_register_user'),
 
     # Password reset

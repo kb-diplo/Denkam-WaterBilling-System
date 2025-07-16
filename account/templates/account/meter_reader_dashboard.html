@@ -1,17 +1,23 @@
 {% extends 'main/layout.html' %}
 
-{% block content %}
-<div class="container">
-    <h1>Meter Reader Dashboard</h1>
-    <p>Welcome, {{ request.user.first_name }}!</p>
-    <p>This is your dashboard. You can view your assigned tasks and submit meter readings from here.</p>
+{% block body %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Meter Reader Dashboard</h1>
     
-    <div class="card mt-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Welcome, {{ request.user.get_full_name }}!</h6>
+        </div>
         <div class="card-body">
-            <h5 class="card-title">Actions</h5>
-            <a href="#" class="btn btn-primary">Submit New Reading</a>
-            <a href="#" class="btn btn-secondary">View Assigned Routes</a>
+            <p>This is your dashboard. You can use the sidebar to navigate to different sections:</p>
+            <ul>
+                <li><b>Meter Reading:</b> Search for clients and submit new meter readings.</li>
+                <li><b>Register Client:</b> Add new clients to the system.</li>
+                <li><b>Profile:</b> View and manage your personal information.</li>
+            </ul>
+            <p>Select an option from the sidebar to get started.</p>
         </div>
     </div>
+
 </div>
-{% endblock %}
+{% endblock body %}
