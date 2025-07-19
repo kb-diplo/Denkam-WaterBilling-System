@@ -14,15 +14,102 @@
     {% endif %}
 
 
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Pending Bills</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_bills }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-invoice-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Amount Due</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_amount_due|floatformat:2 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Overdue Bills</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ overdue_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Quick Actions</div>
+                            <a href="{% url 'generate_bills' %}" class="btn btn-success btn-sm">
+                                <i class="fas fa-plus"></i> Generate Bills
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-cogs fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow mb-4" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-in-out">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary text-center">Ongoing Bills Data Table</h6>
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h5 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list-ul"></i> Manage Unpaid Bills
+            </h5>
+            {% if request.user.is_superuser %}
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary btn-sm" onclick="selectAllBills()">
+                    <i class="fas fa-check-square"></i> Select All
+                </button>
+                <button type="button" class="btn btn-success btn-sm" onclick="bulkPrintSelected()">
+                    <i class="fas fa-print"></i> Bulk Print Receipts
+                </button>
+            </div>
+            {% endif %}
+            <div class="btn-group" role="group">
+                <a href="{% url 'generate_bills' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-calculator"></i> Generate New Bills
+                </a>
+                <a href="{% url 'select_client_for_payment' %}" class="btn btn-success btn-sm">
+                    <i class="fas fa-money-bill"></i> Record Payment
+                </a>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered tally-table" id="dataTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
+                            {% if request.user.is_superuser %}<th><input type="checkbox" id="selectAll"></th>{% endif %}
                             <th>Name</th>
                             <th>Cubic Meter Consumption</th>
                             <th>Consumption Cost</th>
@@ -37,33 +124,93 @@
                     <tbody>
                        {% for bill in ongoingbills %}
                         <tr>
+                            {% if request.user.is_superuser %}<td><input type="checkbox" class="bill-checkbox" value="{{bill.id}}"></td>{% endif %}
                             <td> {{bill.name}} </td>
-                            <td> {{bill.meter_consumption}} cu.m</td> 
-                            <td> KSh{{bill.compute_bill}}</td> 
-                            <td> {{bill.duedate}} </td> 
-                            <td> {{bill.penaltydate}} </td> 
-                            <td> {{bill.penalty}}</td> 
-                            <td class="font-weight-bolder text-primary"> KSh{{bill.payable}} </td> 
-                            <td> {{bill.status}}</td>
+                            <td> {{bill.meter_consumption}} m³</td> 
+                            <td> KSh{{bill.payable|floatformat:2}}</td> 
+                            <td> 
+                                {{bill.duedate|date:"M d, Y"}} 
+                                {% now "Y-m-d" as today %}
+                                {% if bill.duedate|date:"Y-m-d" < today %}
+                                    <span class="badge badge-danger ml-1">Overdue</span>
+                                {% endif %}
+                            </td> 
+                            <td> {{bill.penaltydate|date:"M d, Y"}} </td> 
+                            <td> 
+                                {% if bill.penalty > 0 %}
+                                    <span class="text-danger font-weight-bold">KSh{{bill.penalty|floatformat:2}}</span>
+                                {% else %}
+                                    <span class="text-muted">KSh0.00</span>
+                                {% endif %}
+                            </td> 
+                            <td class="font-weight-bolder text-primary"> KSh{{bill.payable|floatformat:2}} </td> 
+                            <td> 
+                                <span class="badge badge-{% if bill.status == 'Paid' %}success{% elif bill.status == 'Partially Paid' %}warning{% else %}danger{% endif %}">
+                                    {{bill.status}}
+                                </span>
+                            </td>
                             <td class="text-center">
                                 {% if request.user.is_superuser %}
-                                <form method="POST" action="">
-                                    {% csrf_token %}
-                                    <input name="contact_number" type="text" value="{{bill.name.contact_number}}" hidden>
-                                    <input name="total_bill" type="text" value="{{bill.payable}}" hidden>
-                                    <input name="due_date" type="text" value="{{bill.duedate}}" hidden>   
-                                    <input name="penalty_date" type="text" value="{{bill.penaltydate}}" hidden>
-                                    <button name="notify" class="btn btn-primary" type="submit"> 
-                                        <i class="fa-solid fa-envelope"></i>
-                                    </button>
-                                    <a href="{% url 'update_bills' bill.id %}" class="btn btn-primary"><i class="fas fa-edit"></i></a>
-                                    <a href="{% url 'delete_bills' bill.id %}" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i></a>
-                                </form>
+                                    <!-- Admin Actions -->
+                                    <div class="btn-group-vertical btn-group-sm" role="group">
+                                        <!-- Payment Actions -->
+                                        <div class="btn-group btn-group-sm mb-1" role="group">
+                                            <a href="{% url 'select_payment_method' bill.id %}" class="btn btn-success btn-sm" title="Record Payment">
+                                                <i class="fas fa-money-bill"></i>
+                                            </a>
+                                            {% if bill.status == 'Pending' %}
+                                                <a href="{% url 'admin_send_stk_push' bill.id %}" class="btn btn-info btn-sm" title="Send M-Pesa STK">
+                                                    <i class="fas fa-mobile-alt"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- View/Edit Actions -->
+                                        <div class="btn-group btn-group-sm mb-1" role="group">
+                                            <a href="{% url 'view_receipt' bill.id %}" class="btn btn-primary btn-sm" title="View Receipt">
+                                                <i class="fas fa-receipt"></i>
+                                            </a>
+                                            <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-warning btn-sm" title="Download PDF">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                            <a href="{% url 'update_bills' bill.id %}" class="btn btn-secondary btn-sm" title="Edit Bill">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Notification & Delete -->
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <form method="POST" action="" class="d-inline">
+                                                {% csrf_token %}
+                                                <input name="contact_number" type="hidden" value="{{bill.name.contact_number}}">
+                                                <input name="total_bill" type="hidden" value="{{bill.payable}}">
+                                                <input name="due_date" type="hidden" value="{{bill.duedate}}">   
+                                                <input name="penalty_date" type="hidden" value="{{bill.penaltydate}}">
+                                                <button name="notify" class="btn btn-outline-primary btn-sm" type="submit" title="Send Notification"> 
+                                                    <i class="fa-solid fa-envelope"></i>
+                                                </button>
+                                            </form>
+                                            <a href="{% url 'delete_bills' bill.id %}" class="btn btn-danger btn-sm" title="Delete Bill" onclick="return confirm('Are you sure you want to delete this bill?')">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <!-- Customer Actions -->
+                                    <div class="btn-group-vertical btn-group-sm" role="group">
+                                        {% if bill.status != 'Paid' %}
+                                            <a href="{% url 'initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm mb-1">
+                                                <i class="fas fa-mobile-alt"></i> Pay M-Pesa
+                                            </a>
+                                        {% endif %}
+                                        <a href="{% url 'view_receipt' bill.id %}" class="btn btn-info btn-sm mb-1">
+                                            <i class="fas fa-receipt"></i> View Receipt
+                                        </a>
+                                        <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-file-pdf"></i> Download PDF
+                                        </a>
+                                    </div>
                                 {% endif %}
-                                {% if bill.status != 'Paid' and not request.user.is_superuser %}
-                                <a href="{% url 'initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm">Pay with M-Pesa</a>
-                                {% endif %}
-                                <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-success"><i class="fas fa-file-pdf"></i></a>
                             </td>
                         </tr>   
                         {% endfor %}
@@ -76,4 +223,63 @@
 
 
 </div>
+
+<script>
+function selectAllBills() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.bill-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+}
+
+function bulkPrintSelected() {
+    const selectedBills = [];
+    const checkboxes = document.querySelectorAll('.bill-checkbox:checked');
+    
+    checkboxes.forEach(checkbox => {
+        selectedBills.push(checkbox.value);
+    });
+    
+    if (selectedBills.length === 0) {
+        alert('Please select at least one bill to print.');
+        return;
+    }
+    
+    // Create form and submit for bulk printing
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "bulk_print_receipts" %}';
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+    
+    // Add selected bills
+    selectedBills.forEach(billId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_bills';
+        input.value = billId;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Handle select all checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        selectAll.addEventListener('change', selectAllBills);
+    }
+});
+</script>
+
 {% endblock %}

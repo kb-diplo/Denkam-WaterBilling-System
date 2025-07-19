@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from .decorators import admin_required, meter_reader_required
 from .forms import CustomerRegistrationForm, MeterReaderRegistrationForm, RegistrationForm, VerificationForm, AdminRegistrationForm, AdminUserCreationForm, MeterReaderCreationForm
 from main.models import *
+from main.models import Metric
 from django.conf import settings
 import sweetify
 import random as r
@@ -30,8 +31,11 @@ def login_view(request):
     if request.method == 'POST':
         email = request.POST['email']
         password = request.POST['password']
+        print(f"Login attempt - Email: {email}")
         user = authenticate(request, email=email, password=password)
+        print(f"Authentication result: {user}")
         if user is not None:
+            print(f"User role: {user.role}, Verified: {user.verified}")
             if not user.verified:
                 # If user is not verified, send OTP for email verification.
                 otp = generate_otp()
@@ -52,8 +56,11 @@ def login_view(request):
             login(request, user)
             sweetify.success(request, 'Login Successfully')
             if user.role == Account.Role.ADMIN:
-                if not Metric.objects.exists():
-                    Metric.objects.create(consump_amount=1, penalty_amount=1)
+                try:
+                    if not Metric.objects.exists():
+                        Metric.objects.create(consump_amount=1, penalty_amount=1)
+                except Exception as e:
+                    print(f"Error creating Metric: {e}")
                 return HttpResponseRedirect(reverse('dashboard'))
             elif user.role == Account.Role.METER_READER:
                 return HttpResponseRedirect(reverse('meter_reader_dashboard'))
@@ -62,6 +69,7 @@ def login_view(request):
             else:
                 return HttpResponseRedirect(reverse('landingpage'))
         else:
+            print(f"Authentication failed for email: {email}")
             sweetify.error(request, 'Invalid Credentials')
             return render(request, 'account/login.html', {'error': 'Invalid Credentials', 'role': role})
 

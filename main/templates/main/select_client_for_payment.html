@@ -1,0 +1,49 @@
+{% extends 'main/layout.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="card my-5 shadow-sm" data-aos="fade-up">
+        <div class="card-header">
+            <h5 class="card-title text-center font-weight-bolder text-primary">{{ title }}</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-center text-muted">
+                Search for a client by name or account number to record a cash payment.
+            </p>
+            <form method="get" action="{% url 'select_client_for_payment' %}" class="form-inline justify-content-center mb-4">
+                <div class="form-group mx-sm-3 mb-2">
+                    <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ request.GET.q }}">
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Search</button>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Account #</th>
+                            <th>Name</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in clients %}
+                        <tr>
+                            <td>{{ client.account_number }}</td>
+                            <td>{{ client.first_name }} {{ client.last_name }}</td>
+                            <td>
+                                <a href="{% url 'record_cash_payment' client.id %}" class="btn btn-sm btn-success">Record Payment</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">No clients with pending bills found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

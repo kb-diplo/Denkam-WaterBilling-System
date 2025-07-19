@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Denkam Water Billing Report</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm 1.5cm 2.5cm 1.5cm;
+            @bottom-center {
+                content: element(footer);
+                border-top: 1px solid #eee;
+                padding-top: 5px;
+                width: 100%;
+                text-align: center;
+                font-size: 0.8em;
+                color: #7f8c8d;
+            }
+        }
+        
+        body {
+            position: relative;
+            margin: 0;
+            padding-bottom: 50px; /* Space for footer */
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        .header p {
+            margin: 5px 0 0;
+            color: #7f8c8d;
+        }
+        .period {
+            text-align: center;
+            font-size: 1.1em;
+            margin: 10px 0 20px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        .summary-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .card {
+            flex: 1;
+            min-width: 200px;
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .card h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        .card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section h2 {
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            font-size: 1.3em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #7f8c8d;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Denkam Water Billing System</h1>
+        <p>Billing Summary Report</p>
+        <div class="period">{{ period_label }}</div>
+    </div>
+
+    <div class="summary-cards">
+        <div class="card">
+            <h3>Total Billed</h3>
+            <div class="value">Ksh {{ total_billed|floatformat:2 }}</div>
+        </div>
+        <div class="card">
+            <h3>Total Collected</h3>
+            <div class="value">Ksh {{ total_collected|floatformat:2 }}</div>
+        </div>
+        <div class="card">
+            <h3>Outstanding Balance</h3>
+            <div class="value">Ksh {{ outstanding_balance|floatformat:2 }}</div>
+        </div>
+        <div class="card">
+            <h3>Total Customers</h3>
+            <div class="value">{{ total_customers }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Payment Status</h2>
+        <table>
+            <tr>
+                <th>Status</th>
+                <th>Count</th>
+                <th>Percentage</th>
+            </tr>
+            <tr>
+                <td>Paid</td>
+                <td>{{ paid_bills_count }}</td>
+                <td>{{ paid_bills_count|floatformat:1 }}%</td>
+            </tr>
+            <tr>
+                <td>Partially Paid</td>
+                <td>{{ partially_paid_count }}</td>
+                <td>{{ partially_paid_count|floatformat:1 }}%</td>
+            </tr>
+            <tr>
+                <td>Pending</td>
+                <td>{{ pending_bills_count }}</td>
+                <td>{{ pending_bills_count|floatformat:1 }}%</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Recent Transactions</h2>
+        <table>
+            <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Type</th>
+                <th>Amount (Ksh)</th>
+            </tr>
+            {% for payment in cash_payments|slice:":10" %}
+            <tr>
+                <td>{% if payment.payment_date %}{{ payment.payment_date|date:"M d, Y" }}{% else %}N/A{% endif %}</td>
+                <td>{% if payment.bill and payment.bill.name %}{{ payment.bill.name }}{% else %}N/A{% endif %}</td>
+                <td>Cash</td>
+                <td>{% if payment.amount_paid is not None %}{{ payment.amount_paid|floatformat:2 }}{% else %}0.00{% endif %}</td>
+            </tr>
+            {% endfor %}
+            {% for payment in mpesa_payments|slice:":10" %}
+            <tr>
+                <td>{% if payment.created_at %}{{ payment.created_at|date:"M d, Y" }}{% else %}N/A{% endif %}</td>
+                <td>{% if payment.bill and payment.bill.name %}{{ payment.bill.name }}{% else %}N/A{% endif %}</td>
+                <td>M-Pesa</td>
+                <td>{% if payment.amount is not None %}{{ payment.amount|floatformat:2 }}{% else %}0.00{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div id="footer" style="position: running(footer); width: 100%; text-align: center; font-size: 0.8em; color: #7f8c8d; margin-top: 20px; border-top: 1px solid #eee; padding-top: 5px;">
+        Page <span class="page-number"></span> of <span class="total-pages"></span> | 
+        Generated on {{ now|date:"F d, Y H:i" }} | 
+        Denkam Water Billing System
+    </div>
+    
+    <script type="text/php">
+        if (isset($pdf)) {
+            $x = 15;
+            $y = $pdf->get_height() - 15;
+            $text = "Page {PAGE_NUM} of {PAGE_COUNT}";
+            $font = $fontMetrics->get_font("helvetica", "normal");
+            $size = 8;
+            $color = array(0.5, 0.5, 0.5);
+            $word_space = 0.0;  //  float
+            $char_space = 0.0;  //  float
+            $angle = 0.0;   //  float
+            $pdf->page_text($x, $y, $text, $font, $size, $color, $word_space, $char_space, $angle);
+        }
+    </script>
+</body>
+</html>

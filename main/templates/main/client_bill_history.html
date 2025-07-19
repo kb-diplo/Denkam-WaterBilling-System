@@ -19,6 +19,7 @@
                             <th>Status</th>
                             <th>Due Date</th>
                             <th>Date Created</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -35,10 +36,13 @@
                             </td>
                             <td>{{ bill.duedate }}</td>
                             <td>{{ bill.created_on }}</td>
+                            <td>
+                                <a href="{% url 'delete_bill' bill.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center">No billing history found.</td>
+                                                        <td colspan="7" class="text-center">No billing history found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

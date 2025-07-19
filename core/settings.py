@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'a-default-secret-key-for-local-development')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
+DEBUG = True  # Temporarily enabled for debugging
 
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
 

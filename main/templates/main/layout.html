@@ -100,8 +100,10 @@
                     </a>
                     <div id="collapseBilling" class="collapse" aria-labelledby="headingBilling" data-parent="#accordionSidebar">
                         <div class="bg-white py-2 collapse-inner rounded">
-                            <h6 class="collapse-header">Billing Sections:</h6>
-                            <a class="collapse-item" href="{% url 'ongoing_bills' %}">Ongoing Bills</a>
+                            <h6 class="collapse-header">Billing Actions:</h6>
+                            <a class="collapse-item" href="{% url 'generate_bills' %}">Generate Bills</a>
+                            <a class="collapse-item" href="{% url 'ongoing_bills' %}">Manage Unpaid Bills</a>
+                            <a class="collapse-item" href="{% url 'select_client_for_payment' %}">Record Cash Payment</a>
                             <a class="collapse-item" href="{% url 'history_bills' %}">Billing History</a>
                         </div>
                     </div>
@@ -259,15 +261,19 @@
         <!-- End of Main Content -->
 
         <!-- Footer -->
-        <footer class="sticky-footer bg-white">
-            <div class="container my-auto">
-                <div class="developer-info text-center my-auto mb-2">
-                    <span>Developed by: Lawrence Mbugua Njuguna 2025</span> | 
-                    <a href="https://github.com/kb-diplo" target="_blank">GitHub</a> | 
-                    <a href="http://www.linkedin.com/in/mbugualawrence" target="_blank">LinkedIn</a>
-                </div>
-                <div class="copyright text-center my-auto">
-                    <b><span>Copyright &copy; Water Billing System 2025</span></b>
+        <footer class="footer mt-auto py-3 bg-white border-top">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <div class="mb-1">
+                            <span>Developed by: Lawrence Mbugua Njuguna 2025</span> | 
+                            <a href="https://github.com/kb-diplo" target="_blank">GitHub</a> | 
+                            <a href="http://www.linkedin.com/in/mbugualawrence" target="_blank">LinkedIn</a>
+                        </div>
+                        <div class="text-muted">
+                            <b>Copyright &copy; Water Billing System 2025</b>
+                        </div>
+                    </div>
                 </div>
             </div>
         </footer>
@@ -308,6 +314,34 @@
 <script src="{% static 'sb_admin/vendor/jquery/jquery.min.js' %}"></script>
 <script src="{% static 'sb_admin/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
+<!-- Custom scripts for active sidebar link -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const currentLocation = window.location.pathname;
+        const sidebarLinks = document.querySelectorAll('#accordionSidebar .nav-link, #accordionSidebar .collapse-item');
+
+        sidebarLinks.forEach(link => {
+            if (link.getAttribute('href') === currentLocation) {
+                // For main nav items
+                const navItem = link.closest('.nav-item');
+                if (navItem) {
+                    navItem.classList.add('active');
+                }
+
+                // For items in a collapsed menu
+                const collapseItem = link.closest('.collapse');
+                if (collapseItem) {
+                    collapseItem.classList.add('show');
+                    const parentNavItem = collapseItem.closest('.nav-item');
+                    if (parentNavItem) {
+                        parentNavItem.classList.add('active');
+                    }
+                }
+            }
+        });
+    });
+</script>
+
 <!-- Core plugin JavaScript-->
 <script src="{% static 'sb_admin/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
@@ -326,13 +360,12 @@
 <script>
     AOS.init();
 </script>
-{% include 'main/includes/js.html' %}
+
 {% block scripts %}{% endblock scripts %}
 
 <!-- SweetAlert2 -->
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% sweetify %}
-
 </body>
 
 </html>

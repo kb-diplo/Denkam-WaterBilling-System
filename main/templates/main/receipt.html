@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt for Bill #{{ bill.id }}</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 350px;
+            margin: 0 auto;
+            padding: 8px;
+            background: white;
+            font-size: 11px;
+            line-height: 1.2;
+        }
+        .receipt-header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 5px;
+        }
+        .receipt-title {
+            font-size: 12px;
+            margin: 2px 0;
+            color: #666;
+        }
+        .receipt-section {
+            margin: 8px 0;
+        }
+        .section-title {
+            font-weight: bold;
+            color: #2c5aa0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 2px;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 11px;
+        }
+        .info-label {
+            font-weight: bold;
+        }
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .status-paid { background: #d4edda; color: #155724; }
+        .status-partial { background: #fff3cd; color: #856404; }
+        .status-pending { background: #f8d7da; color: #721c24; }
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        .payment-table th, .payment-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+        }
+        .payment-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .total-section {
+            border-top: 2px solid #333;
+            padding-top: 10px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .total-amount {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+        .print-buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 12px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn:hover { opacity: 0.8; }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 11px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Receipt Header -->
+    <div class="receipt-header">
+        <!-- Company Logo -->
+        <div class="logo-container" style="margin-bottom: 10px;">
+            <div class="logo-placeholder" style="width: 80px; height: 80px; margin: 0 auto; background: linear-gradient(135deg, #2c5aa0, #1e3a8a); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 24px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                DW
+            </div>
+        </div>
+        
+        <div class="company-name">DENKAM WATERS</div>
+        <div class="receipt-title">Kahawa Wendani Estate, Kiambu County</div>
+        <div class="receipt-title">Phone: +254 700 000 000 | Email: info@denkamwaters.co.ke</div>
+        <div class="receipt-title"><strong>WATER BILL RECEIPT</strong></div>
+    </div>
+
+    <!-- Bill Information -->
+    <div class="receipt-section">
+        <div class="section-title">Bill Information</div>
+        <div class="info-row">
+            <span class="info-label">Bill ID:</span>
+            <span>#{{ bill.id }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Bill Date:</span>
+            <span>{{ bill.created_on|date:"M d, Y" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Due Date:</span>
+            <span>{{ bill.duedate|date:"M d, Y" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="status-badge 
+                {% if bill.status == 'Paid' %}status-paid
+                {% elif bill.status == 'Partially Paid' %}status-partial
+                {% else %}status-pending{% endif %}">
+                {{ bill.status }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Customer Information -->
+    <div class="receipt-section">
+        <div class="section-title">Customer Information</div>
+        <div class="info-row">
+            <span class="info-label">Name:</span>
+            <span>{{ bill.name }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Client ID:</span>
+            <span>{{ bill.name.id }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Phone:</span>
+            <span>{{ bill.name.phone|default:"N/A" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span>{{ bill.name.status|default:"Connected" }}</span>
+        </div>
+    </div>
+
+    <!-- Bill Status Summary -->
+    <div class="receipt-section">
+        <div class="info-row">
+            <span class="info-label">Total Bill Amount:</span>
+            <span><strong>KSh {{ bill.payable|floatformat:2 }}</strong></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Amount Paid:</span>
+            <span style="color: green;"><strong>KSh {{ bill.total_paid|floatformat:2 }}</strong></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Outstanding Balance:</span>
+            <span style="color: {% if bill.balance_due > 0 %}red{% else %}green{% endif %};">
+                <strong>KSh {{ bill.balance_due|floatformat:2 }}</strong>
+            </span>
+        </div>
+        
+        {% if bill.status == 'Partially Paid' %}
+        <div style="text-align: center; margin: 10px 0; padding: 8px; background: #fff3cd; border-radius: 5px;">
+            <small><strong>Partial payment received</strong></small>
+        </div>
+        {% elif bill.status == 'Paid' %}
+        <div style="text-align: center; margin: 10px 0; padding: 8px; background: #d4edda; border-radius: 5px;">
+            <small><strong>✓ Fully Paid</strong></small>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Payment Transactions -->
+    {% if bill.cash_payments.all or bill.mpesa_payments.all %}
+    <div class="receipt-section">
+        <div class="section-title">Payment Transactions</div>
+        <table class="payment-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th>Reference</th>
+                    <th>Amount (KSh)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in bill.cash_payments.all %}
+                <tr>
+                    <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                    <td>Cash</td>
+                    <td>{{ payment.reference_id }}</td>
+                    <td>{{ payment.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                
+                {% for payment in bill.mpesa_payments.all %}
+                <tr>
+                    <td>{{ payment.created_at|date:"M d, Y" }}</td>
+                    <td>M-Pesa</td>
+                    <td>{{ payment.transaction_id }}</td>
+                    <td>{{ payment.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="receipt-section">
+        <div class="section-title">Payment Transactions</div>
+        <div style="text-align: center; padding: 20px; color: #666; font-style: italic;">
+            No payments recorded for this bill.
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Total Section -->
+    <div class="total-section">
+        <div class="total-amount">
+            TOTAL: KSh {{ bill.payable|floatformat:2 }}
+        </div>
+        {% if bill.balance_due > 0 %}
+        <div style="color: red; margin-top: 5px;">
+            <strong>Balance Due: KSh {{ bill.balance_due|floatformat:2 }}</strong>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Thank you for your payment!</p>
+        <p>Generated on: {{ "now"|date:"M d, Y \a\\t g:i A" }}</p>
+    </div>
+
+    <!-- Print Buttons (hidden when printing) -->
+    <div class="print-buttons no-print">
+        <button onclick="window.print()" class="btn btn-primary">
+            🖨️ Print Receipt
+        </button>
+        <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-success">
+            📄 Download PDF
+        </a>
+        <a href="{% url 'ongoing_bills' %}" class="btn btn-secondary">
+            ← Back to Bills
+        </a>
+    </div>
+
+</body>
+</html>

@@ -8,14 +8,28 @@
 
 
     <div class="card shadow mb-4" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-in-out">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary text-center">Bills History Data Table</h6>
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Bills History Data Table</h6>
+            <div class="btn-group">
+                <a href="{% url 'download_billing_history' %}" class="btn btn-success btn-sm">
+                    <i class="fas fa-download"></i> Download PDF
+                </a>
+                {% if user.role == 'ADMIN' %}
+                <button type="button" class="btn btn-info btn-sm" onclick="downloadSelectedReceipts()">
+                    <i class="fas fa-file-pdf"></i> Download Selected Receipts
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllBills()">
+                    <i class="fas fa-check-square"></i> Select All
+                </button>
+                {% endif %}
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered tally-table" id="dataTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
+                            {% if user.role == 'ADMIN' %}<th><input type="checkbox" id="selectAll"></th>{% endif %}
                             <th>Name</th>
                             <th>Cubic Meter Consumption</th>
                             <th>Consumption Cost</th>
@@ -24,6 +38,8 @@
                             <th>Penalty</th>
                             <th>Payable Amount</th>
                             <th>Pay Status</th>
+                            <th>Payment Method</th>
+                            <th>Payment Reference</th>
                             {% if request.user.is_superuser %}
                             <th>Action</th> 
                             {% endif %}
@@ -32,6 +48,7 @@
                     <tbody>
                        {% for bill in billshistory %}
                         <tr>
+                            {% if user.role == 'ADMIN' %}<td><input type="checkbox" class="bill-checkbox" value="{{ bill.id }}"></td>{% endif %}
                             <td> {{bill.name}} </td>
                             <td> {{bill.meter_consumption}} m³</td> 
                             <td> KSh{{bill.compute_bill}}</td> 
@@ -40,11 +57,34 @@
                             <td> {{bill.penalty}}</td> 
                             <td class="font-weight-bolder text-primary"> KSh{{bill.payable}} </td> 
                             <td> {{bill.status}}</td>
+                            <td> 
+                                {% if bill.payment_method %}
+                                    <span class="badge badge-{% if bill.payment_method == 'Cash' %}success{% else %}info{% endif %}">{{bill.payment_method}}</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td> 
+                                {% if bill.payment_reference %}
+                                    <small class="text-muted">{{bill.payment_reference}}</small>
+                                {% else %}
+                                    <small class="text-muted">-</small>
+                                {% endif %}
+                            </td>
                             {% if request.user.is_superuser %}
                             <td class="text-center">  
-                                <a href="{% url 'update_bills' bill.id %}" class="btn btn-primary"><i class="fa-regular fa-pen-to-square"></i></a>
-                                <a href="{% url 'delete_bills' bill.id %}" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i></a>
-                                <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-success"><i class="fas fa-file-pdf"></i></a>
+                                <a href="{% url 'view_receipt' bill.id %}" class="btn btn-info btn-sm" title="View Receipt">
+                                    <i class="fas fa-receipt"></i>
+                                </a>
+                                <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-success btn-sm" title="Download PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                                <a href="{% url 'update_bills' bill.id %}" class="btn btn-primary btn-sm" title="Edit Bill">
+                                    <i class="fa-regular fa-pen-to-square"></i>
+                                </a>
+                                <a href="{% url 'delete_bills' bill.id %}" class="btn btn-danger btn-sm" title="Delete Bill">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </a>
                             </td>
                             {% endif %}
                         </tr>   
@@ -57,4 +97,91 @@
 
 
 </div>
+
+<script>
+// Select All functionality
+function selectAllBills() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const billCheckboxes = document.querySelectorAll('.bill-checkbox');
+    
+    const allChecked = Array.from(billCheckboxes).every(cb => cb.checked);
+    
+    billCheckboxes.forEach(checkbox => {
+        checkbox.checked = !allChecked;
+    });
+    
+    selectAllCheckbox.checked = !allChecked;
+}
+
+// Handle individual checkbox changes
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const billCheckboxes = document.querySelectorAll('.bill-checkbox');
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            billCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+    
+    billCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = Array.from(billCheckboxes).every(cb => cb.checked);
+            const someChecked = Array.from(billCheckboxes).some(cb => cb.checked);
+            
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = allChecked;
+                selectAllCheckbox.indeterminate = someChecked && !allChecked;
+            }
+        });
+    });
+});
+
+// Download selected receipts
+function downloadSelectedReceipts() {
+    const selectedBills = [];
+    const checkboxes = document.querySelectorAll('.bill-checkbox:checked');
+    
+    checkboxes.forEach(checkbox => {
+        selectedBills.push(checkbox.value);
+    });
+    
+    if (selectedBills.length === 0) {
+        alert('Please select at least one bill to download receipts.');
+        return;
+    }
+    
+    // Create a form to submit the selected bill IDs
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "bulk_download_receipts" %}';
+    form.style.display = 'none';
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken.value;
+        form.appendChild(csrfInput);
+    }
+    
+    // Add selected bill IDs
+    selectedBills.forEach(billId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'bill_ids';
+        input.value = billId;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+</script>
+
 {% endblock %}

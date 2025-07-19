@@ -1,0 +1,114 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+{% block body %}
+<div class="container-fluid">
+    <div class="text-center"> 
+        <h1 class="h3 mb-2 text-primary font-weight-bolder">Record Cash Payment</h1><br>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-in-out">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary text-center">Cash Payment for {{bill.name}}</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Bill Information -->
+                    <div class="alert alert-info">
+                        <h5><strong>Bill Details:</strong></h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Client:</strong> {{bill.name}}</p>
+                                <p><strong>Bill Date:</strong> {{bill.created_on|date:"M d, Y"}}</p>
+                                <p><strong>Due Date:</strong> {{bill.duedate}}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Consumption:</strong> {{bill.meter_consumption}} m³</p>
+                                <p><strong>Amount Due:</strong> <span class="text-primary font-weight-bold">KSh{{bill.payable}}</span></p>
+                                <p><strong>Status:</strong> <span class="badge badge-warning">{{bill.status}}</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cash Payment Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="amount_paid" class="font-weight-bold">Amount Received (KSh):</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">KSh</span>
+                                </div>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="amount_paid" 
+                                       name="amount_paid" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       value="{{bill.payable}}"
+                                       placeholder="Enter amount received" 
+                                       required>
+                            </div>
+                            <small class="form-text text-muted">
+                                Expected amount: KSh{{bill.payable}}
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Note:</strong> Please ensure you have received the cash payment before recording it in the system.
+                            </div>
+                        </div>
+
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check"></i> Record Cash Payment
+                            </button>
+                            <a href="{% url 'select_payment_method' bill.id %}" class="btn btn-secondary btn-lg ml-2">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                        </div>
+                    </form>
+
+                    <!-- Payment Summary -->
+                    <div class="card border-success mt-4">
+                        <div class="card-body">
+                            <h6 class="text-success"><i class="fas fa-info-circle"></i> Payment Summary</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Base Amount:</small><br>
+                                    <strong>KSh{{bill.compute_bill}}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Penalty:</small><br>
+                                    <strong>KSh{{bill.penalty}}</strong>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="text-center">
+                                <small class="text-muted">Total Payable:</small><br>
+                                <h5 class="text-success">KSh{{bill.payable}}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-calculate change if needed
+    document.getElementById('amount_paid').addEventListener('input', function() {
+        const amountPaid = parseFloat(this.value) || 0;
+        const amountDue = parseFloat('{{bill.payable}}');
+        const change = amountPaid - amountDue;
+        
+        // You could add change calculation display here if needed
+        if (change > 0) {
+            console.log('Change to give: KSh' + change.toFixed(2));
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'main/layout.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="card my-5 shadow-sm" data-aos="fade-up">
+        <div class="card-header">
+            <h5 class="card-title text-center font-weight-bolder text-primary">{{ title }}</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-center text-muted">
+                Select a pending bill below to mark it as paid in cash.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Bill ID</th>
+                            <th>Total Due</th>
+                            <th>Amount Paid</th>
+                            <th>Balance Due</th>
+                            <th style="width: 250px;">Record Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in pending_bills %}
+                        <tr>
+                            <td>{{ bill.id }}</td>
+                            <td><b>KSh {{ bill.payable|floatformat:2 }}</b></td>
+                            <td>KSh {{ bill.total_paid|floatformat:2 }}</td>
+                            <td class="text-danger"><b>KSh {{ bill.balance_due|floatformat:2 }}</b></td>
+                            <td>
+                                <form method="post" action="{% url 'record_cash_payment' client.id %}" class="form-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="bill_id" value="{{ bill.id }}">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">KSh</span>
+                                        </div>
+                                        <input type="number" name="amount_paid" class="form-control form-control-sm" placeholder="Amount" step="0.01" required>
+                                        <div class="input-group-append">
+                                            <button type="submit" class="btn btn-sm btn-success">Submit</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">This client has no pending bills.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-4">
+                <a href="{% url 'select_client_for_payment' %}" class="btn btn-secondary">Back to Client Search</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

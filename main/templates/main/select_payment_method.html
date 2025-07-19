@@ -1,0 +1,91 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+{% block body %}
+<div class="container-fluid">
+    <div class="text-center"> 
+        <h1 class="h3 mb-2 text-primary font-weight-bolder">Select Payment Method</h1><br>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-in-out">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary text-center">Payment for {{bill.name}}</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Bill Information -->
+                    <div class="alert alert-info">
+                        <h5><strong>Bill Details:</strong></h5>
+                        <p><strong>Client:</strong> {{bill.name}}</p>
+                        <p><strong>Amount Due:</strong> KSh{{bill.payable}}</p>
+                        <p><strong>Due Date:</strong> {{bill.duedate}}</p>
+                        <p><strong>Consumption:</strong> {{bill.meter_consumption}} m³</p>
+                    </div>
+
+                    <!-- Payment Method Selection Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="payment_method" class="font-weight-bold">Choose Payment Method:</label>
+                            <select class="form-control" id="payment_method" name="payment_method" required>
+                                <option value="">-- Select Payment Method --</option>
+                                <option value="cash">💵 Cash Payment</option>
+                                <option value="mpesa">📱 M-Pesa Payment</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right"></i> Proceed to Payment
+                            </button>
+                            <a href="{% url 'ongoingbills' %}" class="btn btn-secondary btn-lg ml-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+
+                    <!-- Payment Method Info -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-money-bill-wave fa-2x text-success mb-2"></i>
+                                    <h6 class="text-success">Cash Payment</h6>
+                                    <small class="text-muted">Record cash payment received at office</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-mobile-alt fa-2x text-info mb-2"></i>
+                                    <h6 class="text-info">M-Pesa Payment</h6>
+                                    <small class="text-muted">Send STK push to customer's phone</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Add some interactivity to the payment method selection
+    document.getElementById('payment_method').addEventListener('change', function() {
+        const selectedMethod = this.value;
+        const cards = document.querySelectorAll('.card.border-success, .card.border-info');
+        
+        cards.forEach(card => {
+            card.classList.remove('bg-light');
+        });
+        
+        if (selectedMethod === 'cash') {
+            document.querySelector('.card.border-success').classList.add('bg-light');
+        } else if (selectedMethod === 'mpesa') {
+            document.querySelector('.card.border-info').classList.add('bg-light');
+        }
+    });
+</script>
+{% endblock %}

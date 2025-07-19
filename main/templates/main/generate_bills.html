@@ -1,0 +1,30 @@
+{% extends 'main/layout.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card my-5 shadow-sm" data-aos="fade-up">
+                <div class="card-header">
+                    <h5 class="card-title text-center font-weight-bolder text-primary">{{ title }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-center">
+                        Click the button below to generate monthly bills for all active clients.
+                    </p>
+                    <p class="text-center text-muted small">
+                        This will create a new pending bill for any client who has not yet been billed in the current month. This action cannot be undone.
+                    </p>
+                    <hr>
+                    <form method="post" class="text-center">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-cogs mr-2"></i>Generate Bills Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

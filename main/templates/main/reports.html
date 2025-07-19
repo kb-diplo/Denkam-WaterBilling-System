@@ -1,126 +1,369 @@
 {% extends 'main/layout.html' %}
+{% load static %}
 
-{% block body %}
-{{ monthly_revenue_data|json_script:"monthly-revenue-data" }}
-{{ monthly_consumption_data|json_script:"monthly-consumption-data" }}
+{% block content %}
 
-<div class="container-fluid">
-    <h3 class="text-dark mb-4">{{ title }}</h3>
-
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="text-primary fw-bold m-0">Total Revenue</h6>
+<div class="container my-5">
+    <div class="mb-4">
+        <h3 class="text-primary font-weight-bolder" data-aos="fade-up">{{ title }}</h3>
+    </div>
+    
+    <!-- Date Range Filter -->
+    <div class="card shadow-sm mb-4" data-aos="fade-up">
+        <div class="card-header bg-light">
+            <h6 class="m-0 font-weight-bold">Filter Report</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <select name="period" class="form-select" onchange="this.form.submit()">
+                        <option value="today" {% if period == 'today' %}selected{% endif %}>Today</option>
+                        <option value="week" {% if period == 'week' %}selected{% endif %}>This Week</option>
+                        <option value="month" {% if period == 'month' %}selected{% endif %}>This Month</option>
+                        <option value="year" {% if period == 'year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if period == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
                 </div>
+                {% if period == 'custom' %}
+                <div class="col-md-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Financial Summary Cards -->
+    <div class="row" data-aos="fade-up" data-aos-delay="100">
+        <!-- Total Billed Card -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-left-primary h-100">
                 <div class="card-body">
-                    <h4 class="text-dark mb-0">Ksh {{ total_revenue|floatformat:2 }}</h4>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Billed</h6>
+                            <h4 class="mb-0">KSh {{ total_billed|floatformat:2 }}</h4>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-file-invoice-dollar text-primary fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="text-muted small">{{ period_label }}</span>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="text-primary fw-bold m-0">Outstanding Payments</h6>
-                </div>
+
+        <!-- Total Collected Card -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-left-success h-100">
                 <div class="card-body">
-                    <h4 class="text-dark mb-0">Ksh {{ outstanding_payments|floatformat:2 }}</h4>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Collected</h6>
+                            <h4 class="mb-0">KSh {{ total_collected|floatformat:2 }}</h4>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-check-circle text-success fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-success bg-opacity-10 text-success">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            {{ collection_rate|floatformat:1 }}% Collection Rate
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="text-primary fw-bold m-0">Total Consumption (m³)</h6>
-                </div>
+
+        <!-- Outstanding Balance Card -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-left-warning h-100">
                 <div class="card-body">
-                    <h4 class="text-dark mb-0">{{ total_consumption|floatformat:2 }}</h4>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Outstanding</h6>
+                            <h4 class="mb-0">KSh {{ outstanding_balance|floatformat:2 }}</h4>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="text-muted small">{{ total_customers }} Total Customers</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Status Card -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-left-info h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">Billing Status</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success rounded me-2" style="width: 12px; height: 12px;"></div>
+                            <span class="small">Paid</span>
+                        </div>
+                        <span class="fw-bold">{{ paid_bills_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning rounded me-2" style="width: 12px; height: 12px;"></div>
+                            <span class="small">Partially Paid</span>
+                        </div>
+                        <span class="fw-bold">{{ partially_paid_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-danger rounded me-2" style="width: 12px; height: 12px;"></div>
+                            <span class="small">Pending</span>
+                        </div>
+                        <span class="fw-bold">{{ pending_bills_count }}</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="text-primary fw-bold m-0">Monthly Revenue</h6>
+    <!-- Payment Methods Summary -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h6 class="m-0 font-weight-bold">Payment Methods</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="p-3 border rounded">
+                                <div class="text-primary mb-2">
+                                    <i class="fas fa-money-bill-wave fa-2x"></i>
+                                </div>
+                                <h5>KSh {{ total_cash|floatformat:2 }}</h5>
+                                <p class="text-muted mb-0">Cash Payments</p>
+                                <small class="text-muted">{{ cash_payments_count }} transactions</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 border rounded">
+                                <div class="text-success mb-2">
+                                    <i class="fas fa-mobile-alt fa-2x"></i>
+                                </div>
+                                <h5>KSh {{ total_mpesa|floatformat:2 }}</h5>
+                                <p class="text-muted mb-0">M-Pesa Payments</p>
+                                <small class="text-muted">{{ mpesa_payments_count }} transactions</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h6 class="m-0 font-weight-bold">Recent Payments</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for payment in cash_payments|slice:":3" %}
+                        <div class="list-group-item border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">Cash Payment</h6>
+                                    <small class="text-muted">{{ payment.payment_date|date:"M d, Y" }}</small>
+                                </div>
+                                <span class="badge bg-success bg-opacity-10 text-success">KSh {{ payment.amount_paid|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% for payment in mpesa_payments|slice:":3" %}
+                        <div class="list-group-item border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">M-Pesa {{ payment.phone_number }}</h6>
+                                    <small class="text-muted">{{ payment.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                <span class="badge bg-success bg-opacity-10 text-success">KSh {{ payment.amount|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if not cash_payments and not mpesa_payments %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-info-circle fa-2x mb-2"></i>
+                            <p class="mb-0">No payment records found</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mt-4">
+        <div class="col-lg-8 mb-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">Monthly Collections</h6>
                 </div>
                 <div class="card-body">
                     <canvas id="monthlyRevenueChart"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="text-primary fw-bold m-0">Monthly Water Consumption</h6>
+        <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h6 class="m-0 font-weight-bold">Billing Status</h6>
                 </div>
                 <div class="card-body">
-                    <canvas id="monthlyConsumptionChart"></canvas>
+                    <canvas id="billingStatusChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
+
 </div>
 
+<style>
+    .chart-container {
+        height: 300px !important;
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+{{ monthly_revenue|json_script:"monthly-revenue-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Monthly Revenue Chart
-        const revenueData = JSON.parse(document.getElementById('monthly-revenue-data').textContent);
-        const revenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
-        new Chart(revenueCtx, {
-            type: 'bar',
-            data: {
-                labels: revenueData.map(item => new Date(item.month).toLocaleString('default', { month: 'long', year: 'numeric' })),
-                datasets: [{
-                    label: 'Revenue (Ksh)',
-                    data: revenueData.map(item => item.total),
-                    backgroundColor: 'rgba(78, 115, 223, 0.8)',
-                    borderColor: 'rgba(78, 115, 223, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value, index, values) {
-                                return 'Ksh ' + value.toLocaleString();
+        const monthlyRevenueData = JSON.parse(document.getElementById('monthly-revenue-data').textContent);
+        const revenueCtx = document.getElementById('monthlyRevenueChart');
+        
+        if (revenueCtx) {
+            new Chart(revenueCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: monthlyRevenueData.map(function(item) { 
+                        const date = new Date(item.month);
+                        return date.toLocaleString('default', { 
+                            month: 'short', 
+                            year: 'numeric' 
+                        });
+                    }),
+                    datasets: [{
+                        label: 'Amount Collected (KSh)',
+                        data: monthlyRevenueData.map(function(item) { 
+                            return item.total; 
+                        }),
+                        backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) { 
+                                    return 'KSh ' + value.toLocaleString(); 
+                                }
                             }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // Monthly Consumption Chart
-        const consumptionData = JSON.parse(document.getElementById('monthly-consumption-data').textContent);
-        const consumptionCtx = document.getElementById('monthlyConsumptionChart').getContext('2d');
-        new Chart(consumptionCtx, {
-            type: 'line',
+        // Billing Status Chart (Pie Chart)
+        const statusCtx = document.getElementById('billingStatusChart');
+        if (statusCtx) {
+            new Chart(statusCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Paid Bills', 'Partially Paid', 'Pending Bills'],
+                    datasets: [{
+                        data: [
+                            {{ paid_bills_count|default:0 }}, 
+                            {{ partially_paid_count|default:0 }}, 
+                            {{ pending_bills_count|default:0 }}
+                        ],
+                        backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b'],
+                        hoverBackgroundColor: ['#17a673', '#e5b33d', '#be2617']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Format numbers with thousands separators
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Update all number displays with formatting
+        var numberDisplays = document.querySelectorAll('.number-display');
+        for (var i = 0; i < numberDisplays.length; i++) {
+            var el = numberDisplays[i];
+            if (el.textContent) {
+                var num = parseFloat(el.textContent);
+                if (!isNaN(num)) {
+                    el.textContent = 'KSh ' + formatNumber(num.toFixed(2));
+                }
+            }
+        }
+
+        // Billing Status Chart (Pie Chart)
+        var paidCount = {{ paid_bills_count }};
+        var pendingCount = {{ pending_bills_count }};
+        const statusCtx = document.getElementById('billingStatusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
             data: {
-                labels: consumptionData.map(item => new Date(item.month).toLocaleString('default', { month: 'long', year: 'numeric' })),
+                labels: ['Paid Bills', 'Pending Bills'],
                 datasets: [{
-                    label: 'Consumption (m³)',
-                    data: consumptionData.map(item => item.total),
-                    backgroundColor: 'rgba(28, 200, 138, 0.1)',
-                    borderColor: 'rgba(28, 200, 138, 1)',
-                    borderWidth: 2,
-                    fill: true
+                    data: [paidCount, pendingCount],
+                    backgroundColor: ['#1cc88a', '#f6c23e'],
+                    hoverBackgroundColor: ['#17a673', '#e5b33d']
                 }]
             },
             options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value, index, values) {
-                                return value.toLocaleString() + ' m³';
-                            }
-                        }
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
                     }
                 }
             }

@@ -1,0 +1,50 @@
+{% extends 'main/layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow mb-4" data-aos="fade-up">
+        <div class="card-header py-3">
+            <h5 class="m-0 font-weight-bold text-primary text-center">{{ title }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Bill ID</th>
+                            <th>Client</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <tr>
+                            <td>{{ bill.id }}</td>
+                            <td>{{ bill.name }}</td>
+                            <td>KSh {{ bill.payable }}</td>
+                            <td>
+                                <span class="badge badge-{% if bill.status == 'Paid' %}success{% elif bill.status == 'Pending' %}warning{% else %}secondary{% endif %}">
+                                    {{ bill.status }}
+                                </span>
+                            </td>
+                            <td>{{ bill.duedate }}</td>
+                            <td>
+                                <a href="{% url 'view_receipt' bill.id %}" class="btn btn-sm btn-primary">View Receipt</a>
+                                <a href="{% url 'generate_bill_pdf' bill.id %}" class="btn btn-sm btn-info">View PDF</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No billing history found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
