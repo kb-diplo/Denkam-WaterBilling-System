@@ -166,88 +166,47 @@ def history_bills(request):
 @customer_or_admin_required
 def download_billing_history(request):
     """Download billing history as PDF"""
-    from reportlab.lib.pagesizes import A4, landscape
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib.units import inch
-    import io
-    
     # Get bills data
     if request.user.role == Account.Role.ADMIN:
-        bills_history = WaterBill.objects.filter(status__in=['Paid', 'Partially Paid']).prefetch_related('cash_payments', 'mpesa_payments').order_by('-created_on')
+        bills = WaterBill.objects.filter(status__in=['Paid', 'Partially Paid']).prefetch_related('cash_payments', 'mpesa_payments').order_by('-billing_month')
+        customer = None
     else:
-        bills_history = WaterBill.objects.filter(name__name=request.user, status__in=['Paid', 'Partially Paid']).prefetch_related('cash_payments', 'mpesa_payments').order_by('-created_on')
+        customer = get_object_or_404(Client, user=request.user)
+        bills = WaterBill.objects.filter(
+            name=customer,
+            status__in=['Paid', 'Partially Paid']
+        ).prefetch_related('cash_payments', 'mpesa_payments').order_by('-billing_month')
     
-    # Create PDF
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), topMargin=0.5*inch)
-    elements = []
+    # Calculate totals
+    total_billed = bills.aggregate(total=Sum('payable'))['total'] or 0
+    total_paid = sum(bill.get_amount_paid() for bill in bills)
+    balance = total_billed - total_paid
     
-    # Title
-    styles = getSampleStyleSheet()
-    title = Paragraph("<b>Denkam Waters - Billing History Report</b>", styles['Title'])
-    elements.append(title)
-    elements.append(Spacer(1, 0.2*inch))
+    # Prepare context for the template
+    context = {
+        'customer': customer or request.user.get_full_name(),
+        'bills': bills,
+        'total_billed': total_billed,
+        'total_paid': total_paid,
+        'balance': balance,
+        'receipt_number': f"RCPT-{uuid.uuid4().hex[:8].upper()}",
+        'date_printed': timezone.now(),
+    }
     
-    # Prepare table data
-    data = [[
-        'Client Name', 'Consumption (m³)', 'Amount (KSh)', 'Due Date', 
-        'Status', 'Payment Method', 'Reference', 'Date Paid'
-    ]]
+    # Render the HTML template
+    html_string = render_to_string('main/billing_history_receipt.html', context)
     
-    for bill in bills_history:
-        # Get payment method info
-        payment_method = 'Unknown'
-        payment_reference = 'No Reference'
-        
-        cash_payment = bill.cash_payments.first()
-        if cash_payment:
-            payment_method = 'Cash'
-            payment_reference = cash_payment.reference_id
-        
-        mpesa_payment = bill.mpesa_payments.filter(result_code=0).first()
-        if mpesa_payment:
-            payment_method = 'M-Pesa'
-            payment_reference = mpesa_payment.transaction_id or 'No ID'
-        
-        data.append([
-            str(bill.name),
-            f"{bill.meter_consumption or 0} m³",
-            f"KSh{bill.payable}",
-            bill.duedate.strftime('%Y-%m-%d') if bill.duedate else 'N/A',
-            bill.status,
-            payment_method,
-            payment_reference,
-            bill.created_on.strftime('%Y-%m-%d') if bill.created_on else 'N/A'
-        ])
+    # Create a PDF response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="billing_history.pdf"'
     
-    # Create table
-    table = Table(data, colWidths=[1.2*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch, 1*inch, 0.8*inch])
+    # Generate PDF
+    pisa_status = pisa.CreatePDF(html_string, dest=response)
     
-    # Style the table
-    style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ])
+    if pisa_status.err:
+        return HttpResponse('We had some errors generating the PDF', status=500)
     
-    table.setStyle(style)
-    elements.append(table)
-    
-    # Build PDF
-    doc.build(elements)
-    buffer.seek(0)
-    
-    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="billing_history.pdf"'
+    return response
     return response
 
 @login_required(login_url='login')
@@ -693,6 +652,10 @@ from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from datetime import datetime, timedelta
 from collections import defaultdict
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
+from django.http import HttpResponse
+import uuid
 import json
 from django.http import HttpResponse
 from django.template.loader import get_template
@@ -1664,7 +1627,7 @@ def generate_bill_pdf(request, bill_id):
             self.canv.circle(self.width/2, self.height/2, self.width/2, fill=1)
             self.canv.setFillColor(colors.white)
             self.canv.setFont('Helvetica-Bold', 16)
-            self.canv.drawCentredText(self.width/2, self.height/2-5, 'DW')
+            self.canv.drawCentredString(self.width/2, self.height/2-5, 'DW')
     
     # Add logo
     elements.append(Spacer(1, 5))
@@ -1704,7 +1667,7 @@ def generate_bill_pdf(request, bill_id):
     customer_info = [
         ["Name:", str(bill.name)],
         ["Client ID:", str(bill.name.id)],
-        ["Phone:", bill.name.phone or "N/A"],
+        ["Phone:", bill.name.contact_number or "N/A"],
         ["Status:", bill.name.status or "Connected"],
     ]
     
@@ -1746,7 +1709,7 @@ def generate_bill_pdf(request, bill_id):
                     payment.payment_date.strftime("%b %d"),
                     "Cash",
                     payment.reference_id[:8] + "...",  # Truncate for space
-                    f"{payment.amount:.2f}"
+                    f"{payment.amount_paid:.2f}"
                 ])
             
             for payment in mpesa_payments:
@@ -1754,7 +1717,7 @@ def generate_bill_pdf(request, bill_id):
                     payment.created_at.strftime("%b %d"),
                     "M-Pesa",
                     payment.transaction_id[:8] + "...",  # Truncate for space
-                    f"{payment.amount:.2f}"
+                    f"{payment.amount_paid:.2f}"
                 ])
             
             payment_table = Table(payment_data, colWidths=[0.5*inch, 0.5*inch, 0.6*inch, 0.5*inch])
@@ -1910,7 +1873,7 @@ def bulk_download_receipts(request):
                 self.canv.circle(self.width/2, self.height/2, self.width/2, fill=1)
                 self.canv.setFillColor(colors.white)
                 self.canv.setFont('Helvetica-Bold', 16)
-                self.canv.drawCentredText(self.width/2, self.height/2-5, 'DW')
+                self.canv.drawCentredString(self.width/2, self.height/2-5, 'DW')
         
         # Generate receipt for each bill
         for i, bill in enumerate(bills):
