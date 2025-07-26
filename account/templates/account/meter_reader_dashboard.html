@@ -1,16 +1,79 @@
 {% extends 'main/layout.html' %}
 
 {% block content %}
-<div class="container">
-    <h1>Meter Reader Dashboard</h1>
-    <p>Welcome, {{ request.user.first_name }}!</p>
-    <p>This is your dashboard. You can view your assigned tasks and submit meter readings from here.</p>
-    
-    <div class="card mt-4">
-        <div class="card-body">
-            <h5 class="card-title">Actions</h5>
-            <a href="#" class="btn btn-primary">Submit New Reading</a>
-            <a href="#" class="btn btn-secondary">View Assigned Routes</a>
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Meter Reading Dashboard</h1>
+        <div>
+            <a href="{% url 'main:meter_reader_requirements' %}" class="btn btn-info btn-icon-split">
+                <span class="icon text-white-50"><i class="fas fa-tasks"></i></span>
+                <span class="text">View Requirements</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Welcome Card -->
+        <div class="col-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Welcome, {{ request.user.get_full_name }}!</h6>
+                </div>
+                <div class="card-body">
+                    <p>This dashboard provides you with all the tools you need to efficiently manage meter readings for your assigned clients.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Key Features:</h5>
+                            <ul>
+                                <li>Search and filter clients by name or meter number</li>
+                                <li>Submit new meter readings with validation</li>
+                                <li>View client details and billing status</li>
+                                <li>Track your reading progress</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Quick Actions:</h5>
+                            <a href="{% url 'main:meter_reading' %}" class="btn btn-primary btn-icon-split mb-2">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-plus-circle"></i>
+                                </span>
+                                <span class="text">Submit New Reading</span>
+                            </a>
+                            <br>
+                            <a href="{% url 'main:meter_reading' %}" class="btn btn-info btn-icon-split">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <span class="text">Search Clients</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Instructions for Meter Reading</h6>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li><strong>Search for Client:</strong> Use the search function to find your assigned clients by name or meter number.</li>
+                        <li><strong>Verify Client Details:</strong> Check the client's information before submitting a reading.</li>
+                        <li><strong>Enter Reading:</strong> Input the current meter reading value. The system will validate that it's not lower than the previous reading.</li>
+                        <li><strong>Add Notes (Optional):</strong> Include any relevant information about the reading or client.</li>
+                        <li><strong>Submit:</strong> Save the reading. The system will automatically calculate consumption and update billing status.</li>
+                    </ol>
+                    <div class="alert alert-info">
+                        <strong>Tip:</strong> Always double-check meter readings before submission. If you notice any unusual consumption patterns, make a note in the comments section.
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

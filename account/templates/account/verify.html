@@ -1,32 +1,42 @@
 {% extends 'account/layout.html' %}
 {% block body %}
 <div style="margin-top: 150px;" class="container">
-
     <div class="row justify-content-center">
         <div class="col-xl-10 col-lg-12 col-md-9">
             <div class="card o-hidden border-0 shadow-lg my-5">
                 <div class="card-body p-0">
-                    <!-- Nested Row within Card Body -->
                     <div class="row">
                         <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
-                        <div style="margin-bottom: 60px;" class="col-lg-6">
+                        <div class="col-lg-6">
                             <div class="p-5">
                                 <div class="text-center">
-                                    <h1 class="h4 text-gray-900 mb-4">Verify</h1>
-                                    {% if error %}
-                                    <p style="color: red;">{{ error }}</p>
-                                    {% else %}
+                                    <h1 class="h4 text-gray-900 mb-4">Verify OTP</h1>
+                                    {% if messages %}
+                                        {% for message in messages %}
+                                            <div class="alert alert-{{ message.tags }}">
+                                                {{ message }}
+                                            </div>
+                                        {% endfor %}
                                     {% endif %}
                                 </div>
-                                <form action="" method="POST" class="user">
+                                <form action="{% url 'account:verify' %}" method="POST" class="user">
                                     {% csrf_token %}
                                     <div class="form-group">
-                                        {{ otp_form }}
+                                        <label for="otp">Enter OTP:</label>
+                                        <input type="text" 
+                                               name="otp" 
+                                               id="otp" 
+                                               class="form-control form-control-user" 
+                                               placeholder="Enter OTP" 
+                                               required>
                                     </div>
-                                    <input type="submit" value="Verify" class="btn btn-primary btn-user btn-block">
-                                    <a href="{% url 'logout' %}" class="btn btn-secondary btn-user btn-block">Logout</a>
+                                    <button type="submit" class="btn btn-primary btn-user btn-block">
+                                        Verify OTP
+                                    </button>
+                                    <a href="{% url 'account:logout' %}" class="btn btn-secondary btn-user btn-block mt-3">
+                                        Logout
+                                    </a>
                                 </form>
-                                <hr>
                             </div>
                         </div>
                     </div>
@@ -35,5 +45,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

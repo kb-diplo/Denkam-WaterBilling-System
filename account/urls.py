@@ -1,20 +1,16 @@
 from django.urls import path
 from . import views
-from .views import meter_reader_register_user_view
 from django.contrib.auth import views as auth_views
 
+app_name = 'account'
 
 urlpatterns = [
-    path('meter-reader/register-client/', meter_reader_register_user_view, name='meter_reader_register_user'),
-    path('', views.landingpage, name="landingpage"),
-    path("login", views.login_view, name="login"),
-    path("logout", views.logout_view, name="logout"),
-
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
     path('register/', views.customer_register_view, name='register'),
-    path('register/meter-reader/', views.meter_reader_register_view, name='meter_reader_register'),
     path('register/admin/', views.admin_register_view, name='admin_register'),
-    path('verify', views.verify, name="verify"),
-    path('dashboard/meter-reader/', views.meter_reader_dashboard, name='meter_reader_dashboard'),
+    path('', views.landingpage, name="landingpage"),
+    path('dashboard/meter-reading/', views.meter_reading_dashboard, name='meter_reading_dashboard'),
     path('admin/register_user/', views.admin_register_user_view, name='admin_register_user'),
 
     # Password reset

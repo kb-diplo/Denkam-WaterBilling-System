@@ -23,26 +23,24 @@
                                                 {% endif %}
                                             </h1>
                                         </div>
-                                        <form method="post" action="{% url 'login' %}{% if role %}?role={{ role }}{% endif %}" class="user">
+                                        <form class="user" method="POST" action="{% url 'account:login' %}{% if role %}?role={{ role }}{% endif %}">
                                             {% csrf_token %}
                                             <div class="form-group">
                                                 <input type="email" name="email" class="form-control form-control-user" id="email" placeholder="Email">
                                             </div>
-                                            <div class="form-group">
+                                            <div class="form-group position-relative">
                                                 <input type="password" name="password" class="form-control form-control-user" id="password" placeholder="Password">
+                                                <span class="position-absolute" style="top: 50%; right: 1rem; transform: translateY(-50%); cursor: pointer;" id="togglePassword">
+                                                    <i class="fa fa-eye" aria-hidden="true"></i>
+                                                </span>
                                             </div>
                                             <input type="submit" value="Login" class="btn btn-primary btn-user btn-block">
                                             <hr>
-                                            {% if role != 'admin' and role != 'meter_reader' %}
                                             <div class="text-center">
-                                                <a class="small" href="{% url 'password_reset' %}">Forgot Password?</a>
+                                                <a class="small" href="{% url 'account:password_reset' %}">Forgot Password?</a>
                                             </div>
                                             <div class="text-center">
-                                                <a class="small" href="{% url 'register' %}">Create an Account!</a>
-                                            </div>
-                                            {% endif %}
-                                            <div class="text-center">
-                                                <a class="small" href="{% url 'landingpage' %}">Back to Homepage</a>
+                                                <a class="small" href="{% url 'account:landingpage' %}">Back to Homepage</a>
                                             </div>
                                         </form>
                                     </div>
@@ -56,4 +54,21 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+
+        togglePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            // toggle the eye slash icon
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    });
+</script>
 {% endblock %}

@@ -32,11 +32,24 @@
 
 
 <body id="page-top">
-{% block body %}
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
+    {% block body %}
+    {% endblock body %}
 
-{% endblock body %}
-        <script src="{% static 'sb_admin/vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'sb_admin/vendor/jquery/jquery.min.js' %}"></script>
         <script src="{% static 'sb_admin/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
         <script src="{% static 'sb_admin/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
         <script src="{% static 'sb_admin/js/sb-admin-2.min.js' %}"></script>
@@ -47,5 +60,7 @@
         </script>
         {% load sweetify %}
         {% sweetify %}
+
+        {% block scripts %}{% endblock %}
     </body>
 </html>

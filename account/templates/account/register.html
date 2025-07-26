@@ -13,14 +13,33 @@
                             <h1 class="h4 text-gray-900 mb-4">{% if title %}{{ title }}{% else %}Create an Account{% endif %}</h1>
                             {% if error %}
                             <p style="color: red;">{{ error }}</p>
-                            {% else %}
+                            {% endif %}
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {% for error in form.non_field_errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if messages %}
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            {% endfor %}
                             {% endif %}
                         </div>
                         <form action="" method="POST" class="user">
                              {% csrf_token %}
                             <div class="form-group row">
                                 <div class="col-sm-12 mb-3 mb-sm-0">
-                                {{ form.email }}
+                                    <input type="email" name="email" class="form-control form-control-user {% if form.email.errors %}is-invalid{% endif %}" id="id_email" placeholder="Email Address" value="{{ form.email.value|default:'' }}">
+                                    {% for error in form.email.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <ul style="font-size:13px; list-style: none;">
@@ -28,18 +47,30 @@
                             </ul>
                             <div class="form-group row">
                                 <div class="col-sm-6 mb-3 mb-sm-0">
-                                    {{ form.first_name }}
+                                    <input type="text" name="first_name" class="form-control form-control-user {% if form.first_name.errors %}is-invalid{% endif %}" id="id_first_name" placeholder="First Name" value="{{ form.first_name.value|default:'' }}">
+                                    {% for error in form.first_name.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                                 <div class="col-sm-6">
-                                    {{ form.last_name }}
+                                    <input type="text" name="last_name" class="form-control form-control-user {% if form.last_name.errors %}is-invalid{% endif %}" id="id_last_name" placeholder="Last Name" value="{{ form.last_name.value|default:'' }}">
+                                     {% for error in form.last_name.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="form-group row">
                                 <div class="col-sm-6 mb-3 mb-sm-0">
-                                    {{ form.password }}
+                                    <input type="password" name="password1" class="form-control form-control-user {% if form.password1.errors %}is-invalid{% endif %}" id="id_password1" placeholder="Password">
+                                     {% for error in form.password1.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                                 <div class="col-sm-6">
-                                    <input type="password" name="password2" class="form-control form-control-user" placeholder="Confirm Password">
+                                    <input type="password" name="password2" class="form-control form-control-user {% if form.password2.errors %}is-invalid{% endif %}" id="id_password2" placeholder="Confirm Password">
+                                    {% for error in form.password2.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="help" id="id_password1_helptext">
@@ -54,10 +85,10 @@
                         </form>
                         <hr>
                         <div class="text-center">
-                            <a class="small" href="{% url 'login' %}">Already have an account? Login!</a>
+                            <a class="small" href="{% url 'account:login' %}">Already have an account? Login!</a>
                         </div>
                         <div class="text-center mt-2">
-                            <a class="small" href="{% url 'landingpage' %}">Go to Homepage</a>
+                            <a class="small" href="{% url 'account:landingpage' %}">Go to Homepage</a>
                         </div>
                     </div>
                 </div>

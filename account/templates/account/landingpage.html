@@ -75,14 +75,13 @@
           <li><a href="#services">Features</a></li>
           <li class="drop-down"><a href="#">Client Portal</a>
             <ul>
-              <li><a href="{% url 'login' %}">Login</a></li>
-              <li><a href="{% url 'register' %}">Register</a></li>
+              <li><a href="{% url 'account:login' %}?role=customer">Login</a></li>
             </ul>
           </li>
           <li class="drop-down"><a href="#">Staff Portal</a>
             <ul>
-              <li><a href="{% url 'login' %}?role=admin">Admin Login</a></li>
-              <li><a href="{% url 'login' %}?role=meter_reader">Meter Reader Login</a></li>
+              <li><a href="{% url 'account:login' %}?role=admin">Admin Login</a></li>
+              <li><a href="{% url 'account:login' %}?role=meter_reader">Meter Reader Login</a></li>
             </ul>
           </li>
         </ul>
@@ -97,16 +96,16 @@
       <div class="row justify-content-center align-self-center" data-aos="fade-up">
         <div class="col-md-6 intro-info order-md-first order-last" data-aos="zoom-in" data-aos-delay="100">
           <h2>Water Billing<br>Management System</h2>
-          <span>This system automates calculating bills and keeping client records, allowing administrators to minimize the effort.</span>
+          <p>This automated water billing system streamlines the entire billing process, from meter reading to payment collection, making it easier for administrators to manage client accounts efficiently.</p>
           <div class="mt-4">
-            <a href="{% url 'login' %}" class="btn-get-started scrollto">Client Portal</a>
+            <a href="{% url 'account:login' %}" class="btn-get-started scrollto">Client Portal</a>
             <div class="btn-group" style="margin-left: 10px;">
               <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Staff Portal
               </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="{% url 'login' %}?role=admin">Admin Login</a>
-                <a class="dropdown-item" href="{% url 'login' %}?role=meter_reader">Meter Reader Login</a>
+                <a class="dropdown-item" href="{% url 'account:login' %}?role=admin">Admin Login</a>
+                <a class="dropdown-item" href="{% url 'account:login' %}?role=meter_reader">Meter Reader Login</a>
               </div>
             </div>
           </div>
@@ -165,31 +164,75 @@
 
   </main><!-- End #main -->
 
-  <!-- ======= Footer ======= -->
-  <footer id="footer" class="section-bg">
-    <div class="footer-top">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-6">
-            <div class="row">
-                <div class="col-sm-6">
-                  <div class="footer-info">
-                    <h3>Denkam</h3>
-                    <p>This system automates calculating bills and keeping client records, allowing administrators to minimize the effort.</p>
-                  </div>
-                </div>
+  <!-- ======= Contact/Company Info Section ======= -->
+  <section id="contact-info" class="contact-info section-bg">
+    <div class="container" data-aos="fade-up">
+
+      <header class="section-header">
+        <h3>About Denkam Waters</h3>
+        <p>Learn more about our company and how we serve the Kahawa Wendani community</p>
+      </header>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="info-box" data-aos="fade-up" data-aos-delay="100">
+            <i class="ion-ios-location-outline"></i>
+            <div>
+              <h3>Our Location</h3>
+              <p>Kahawa Wendani, Kiambu County, Kenya</p>
+            </div>
+          </div>
+          <div class="info-box" data-aos="fade-up" data-aos-delay="200">
+            <i class="ion-ios-telephone-outline"></i>
+            <div>
+              <h3>Call Us</h3>
+              <p>+254 700 000 000</p>
+            </div>
+          </div>
+          <div class="info-box" data-aos="fade-up" data-aos-delay="300">
+            <i class="ion-ios-email-outline"></i>
+            <div>
+              <h3>Email Us</h3>
+              <p>info@denkamwaters.co.ke</p>
+            </div>
+          </div>
+          <div class="info-box" data-aos="fade-up" data-aos-delay="400">
+            <i class="ion-ios-time-outline"></i>
+            <div>
+              <h3>Working Hours</h3>
+              <p>Mon-Fri: 8:00 AM - 5:00 PM<br>Sat: 9:00 AM - 1:00 PM</p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="container">
-      <div class="copyright">
-        &copy; Copyright <strong>Denkam</strong>. All Rights Reserved
+        <div class="col-md-6">
+          <div class="info-box" data-aos="fade-up" data-aos-delay="100">
+            <h3>Our Mission</h3>
+            <p>Denkam Waters is committed to providing clean, reliable water services to the Kahawa Wendani community. Founded in 2020, we've been serving over 1,200 connections with dedication and integrity.</p>
+          </div>
+          <div class="info-box" data-aos="fade-up" data-aos-delay="200">
+            <h3>Why Choose Us</h3>
+            <p>Our automated billing system ensures accurate billing, timely service, and transparent communication with our customers. We're constantly improving our services to better serve our community.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section><!-- End Contact/Company Info Section -->
+
+  <!-- ======= Footer ======= -->
+  <footer class="sticky-footer bg-white">
+    <div class="container my-auto">
+      <div class="developer-info text-center my-auto mb-2">
+        <span>Developed by: Lawrence Mbugua Njuguna 2025</span> | 
+        <a href="https://github.com/kbdiplo" target="_blank">GitHub</a> | 
+        <a href="https://www.linkedin.com/in/mbugualawrence" target="_blank">LinkedIn</a>
+      </div>
+      <div class="copyright text-center my-auto">
+        <b><span>Copyright &copy; Water Billing System 2025</span></b>
       </div>
     </div>
-  </footer><!-- End  Footer -->
+  </footer><!-- End of Footer -->
 
   <a href="#" class="back-to-top"><i class="fa fa-chevron-up"></i></a>
 

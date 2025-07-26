@@ -10,9 +10,87 @@ class RegistrationForm(UserCreationForm):
         fields = ('first_name', 'last_name', 'email')
 
 
-class CustomerRegistrationForm(RegistrationForm):
+class CustomerRegistrationForm(forms.ModelForm):
     """Form for clients to register themselves, or for meter readers to register them."""
-    pass
+    password1 = forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control form-control-user',
+            'placeholder': 'Password',
+            'autocomplete': 'new-password',
+            'required': 'required',
+            'id': 'id_password1'
+        }),
+        min_length=8,
+        help_text='Password must be at least 8 characters long and contain at least one number, one uppercase letter, and one special character.'
+    )
+    password2 = forms.CharField(
+        label='Confirm Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control form-control-user',
+            'placeholder': 'Repeat Password',
+            'autocomplete': 'new-password',
+            'required': 'required',
+            'id': 'id_password2'
+        })
+    )
+
+    class Meta:
+        model = Account
+        fields = ('first_name', 'last_name', 'email')
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control form-control-user',
+                'placeholder': 'First Name',
+                'required': 'required',
+                'id': 'id_first_name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control form-control-user',
+                'placeholder': 'Last Name',
+                'required': 'required',
+                'id': 'id_last_name'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control form-control-user',
+                'placeholder': 'Email Address',
+                'required': 'required',
+                'id': 'id_email'
+            }),
+        }
+
+    def clean_password2(self):
+        # Check that the two password entries match
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Passwords don't match")
+        return password2
+
+    def clean_password1(self):
+        # Add password validation
+        password1 = self.cleaned_data.get("password1")
+        if not password1:
+            raise forms.ValidationError("This field is required.")
+        if len(password1) < 8:
+            raise forms.ValidationError("Password must be at least 8 characters long.")
+        if not any(char.isdigit() for char in password1):
+            raise forms.ValidationError("Password must contain at least one number.")
+        if not any(char.isupper() for char in password1):
+            raise forms.ValidationError("Password must contain at least one uppercase letter.")
+        if not any(char in '!@#$%^&*' for char in password1):
+            raise forms.ValidationError("Password must contain at least one special character (!@#$%^&*).")
+        return password1
+
+    def save(self, commit=True):
+        # Save the provided password in hashed format
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])
+        user.role = Account.Role.CUSTOMER
+        user.is_active = True  # Ensure the user is active
+        if commit:
+            user.save()
+        return user
 
 
 class MeterReaderRegistrationForm(RegistrationForm):
@@ -34,6 +112,24 @@ class AdminUserCreationForm(forms.Form):
     first_name = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}))
     last_name = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}))
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Address'}))
+    password1 = forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Password',
+            'autocomplete': 'new-password'
+        }),
+        min_length=8,
+        help_text='Password must be at least 8 characters long and contain at least one number, one uppercase letter, and one special character.'
+    )
+    password2 = forms.CharField(
+        label='Confirm Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Repeat Password',
+            'autocomplete': 'new-password'
+        })
+    )
     role = forms.ChoiceField(choices=ROLE_CHOICES, required=True, widget=forms.Select(attrs={'class': 'form-control'}))
     contact_number = forms.CharField(max_length=20, required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+254...'}))
     address = forms.CharField(required=False, widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'e.g., Kahawa Estate'}))
@@ -43,6 +139,29 @@ class AdminUserCreationForm(forms.Form):
         if Account.objects.filter(email=email).exists():
             raise forms.ValidationError("An account with this email already exists.")
         return email
+
+    def clean_password1(self):
+        # Add password validation
+        password1 = self.cleaned_data.get("password1")
+        if not password1:
+            raise forms.ValidationError("This field is required.")
+        if len(password1) < 8:
+            raise forms.ValidationError("Password must be at least 8 characters long.")
+        if not any(char.isdigit() for char in password1):
+            raise forms.ValidationError("Password must contain at least one number.")
+        if not any(char.isupper() for char in password1):
+            raise forms.ValidationError("Password must contain at least one uppercase letter.")
+        if not any(char in '!@#$%^&*' for char in password1):
+            raise forms.ValidationError("Password must contain at least one special character (!@#$%^&*).")
+        return password1
+
+    def clean_password2(self):
+        # Check that the two password entries match
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Passwords don't match")
+        return password2
 
     def clean(self):
         cleaned_data = super().clean()
@@ -225,7 +344,6 @@ class UpdateUserForm(FormSettings):
 
    class Meta:
       model = Account
-      exclude = ['verified',]
       fields = ['last_name', 'first_name', 'email', 'password']
       widgets = {
       'last_name':forms.TextInput(attrs={'type': 'text', 'class': 'form-control', 'placeholder':'Last name' }),
