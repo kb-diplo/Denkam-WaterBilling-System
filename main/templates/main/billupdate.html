@@ -8,24 +8,44 @@
 <form action="" method="POST" class="user" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="form-group mt-3">
-        <label>Name: </label> <br>
-        {{ form.name }}
+        <label>Client: </label> <br>
+        {{ form.client }}
     </div>
     <div class="form-group mt-3">
-        <label>Meter Consumption: </label> <br>
-        {{ form.meter_consumption }}
+        <label>Meter Reading: </label> <br>
+        {{ form.meter_reading }}
     </div>
     <div class="form-group mt-3">
-        <label>Pay Status: </label> <br>
+        <label>Consumption (m³): </label> <br>
+        {{ form.consumption }}
+    </div>
+    <div class="form-group mt-3">
+        <label>Rate (KES/m³): </label> <br>
+        {{ form.rate }}
+    </div>
+    <div class="form-group mt-3">
+        <label>Amount (KES): </label> <br>
+        {{ form.amount }}
+    </div>
+    <div class="form-group mt-3">
+        <label>Penalty Amount (KES): </label> <br>
+        {{ form.penalty_amount }}
+    </div>
+    <div class="form-group mt-3">
+        <label>Status: </label> <br>
         {{ form.status }}
     </div>
     <div class="form-group mt-3">
         <label>Due Date: </label> <br>
-        {{ form.duedate }}
+        {{ form.due_date }}
     </div>
     <div class="form-group mt-3">
         <label>Penalty Date: </label> <br>
-        {{ form.penaltydate }}
+        {{ form.penalty_date }}
+    </div>
+    <div class="form-group mt-3">
+        <label>Notes: </label> <br>
+        {{ form.notes }}
     </div>
 
    <div class="d-flex justify-content-center">

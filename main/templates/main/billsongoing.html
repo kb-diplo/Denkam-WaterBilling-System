@@ -23,28 +23,34 @@
                 <table class="table table-bordered tally-table" id="dataTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Cubic Meter Consumption</th>
-                            <th>Consumption Cost</th>
+                            <th>Client Name</th>
+                            <th>Meter Number</th>
+                            <th>Reading Value</th>
+                            <th>Consumption (m³)</th>
+                            <th>Rate (KES/m³)</th>
+                            <th>Amount (KES)</th>
+                            <th>Penalty Amount</th>
+                            <th>Total Payable</th>
                             <th>Due Date</th>
-                            <th>Penalty Date</th>
-                            <th>Penalty</th>
-                            <th>Payable Amount</th>
-                            <th>Pay Status</th>
-                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Payment Date</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                        {% for bill in ongoingbills %}
                         <tr>
-                            <td> {{bill.name}} </td>
-                            <td> {{bill.meter_consumption}} cu.m</td> 
-                            <td> KSh{{bill.compute_bill}}</td> 
-                            <td> {{bill.duedate}} </td> 
-                            <td> {{bill.penaltydate}} </td> 
-                            <td> {{bill.penalty}}</td> 
-                            <td class="font-weight-bolder text-primary"> KSh{{bill.payable}} </td> 
+                            <td> {{bill.client.account.get_full_name}} </td>
+                            <td> {{bill.client.meter_number}} </td>
+                            <td> {{bill.meter_reading.reading_value}} m³</td> 
+                            <td> {{bill.consumption}} m³</td> 
+                            <td> KSh{{bill.rate}}</td> 
+                            <td> KSh{{bill.amount}}</td> 
+                            <td> KSh{{bill.penalty_amount}}</td> 
+                            <td class="font-weight-bolder text-primary"> KSh{{bill.total_amount}}</td> 
+                            <td> {{bill.due_date}} </td> 
                             <td> {{bill.status}}</td>
+                            <td> {{bill.payment_date|default:'Not Paid'}}</td>
                             <td class="text-center">
                                 {% if request.user.is_superuser %}
                                 <form method="POST" action="">
@@ -56,12 +62,15 @@
                                     <button name="notify" class="btn btn-primary" type="submit"> 
                                         <i class="fa-solid fa-envelope"></i>
                                     </button>
-                                    <a href="{% url 'update_bills' bill.id %}" class="btn btn-primary"><i class="fas fa-edit"></i></a>
-                                    <a href="{% url 'delete_bills' bill.id %}" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i></a>
+                                    <a href="{% url 'main:update_bills' bill.id %}" class="btn btn-primary"><i class="fas fa-edit"></i></a>
+                                    <a href="{% url 'main:delete_bills' bill.id %}" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i></a>
                                 </form>
                                 {% endif %}
                                 {% if bill.status != 'Paid' %}
-                                <a href="{% url 'initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm">Pay with M-Pesa</a>
+                                <a href="{% url 'main:initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm">Pay with M-Pesa</a>
+                                {% if request.user.is_superuser or request.user.role == 'meter_reader' %}
+                                <a href="{% url 'main:record_payment' bill.id %}" class="btn btn-info btn-sm">Record Payment</a>
+                                {% endif %}
                                 {% endif %}
                             </td>
                         </tr>   
@@ -88,24 +97,40 @@
                 <form name="attendance" action="" method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="form-group mt-3">
-                        <label>Name: </label> <br>
-                        {{ form.name }}
+                        <label>Client: </label> <br>
+                        {{ form.client }}
                     </div>
                     <div class="form-group mt-3">
-                        <label>Meter Consumption: </label> <br>
-                        {{ form.meter_consumption }}
+                        <label>Meter Reading: </label> <br>
+                        {{ form.meter_reading }}
                     </div>
                     <div class="form-group mt-3">
-                        <label>Pay Status: </label> <br>
+                        <label>Consumption (m³): </label> <br>
+                        {{ form.consumption }}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Rate (KES/m³): </label> <br>
+                        {{ form.rate }}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Amount (KES): </label> <br>
+                        {{ form.amount }}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Penalty Amount (KES): </label> <br>
+                        {{ form.penalty_amount }}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Status: </label> <br>
                         {{ form.status }}
                     </div>
                     <div class="form-group mt-3">
                         <label>Due Date: </label> <br>
-                        {{ form.duedate }}
+                        {{ form.due_date }}
                     </div>
                     <div class="form-group mt-3">
                         <label>Penalty Date: </label> <br>
-                        {{ form.penaltydate }}
+                        {{ form.penalty_date }}
                     </div>
             </div>
             <div class="modal-footer">
