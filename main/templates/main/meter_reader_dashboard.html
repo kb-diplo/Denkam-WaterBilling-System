@@ -6,11 +6,11 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Meter Reader Dashboard</h1>
         <div>
-            <a href="{% url 'meter_reader_register_user' %}" class="btn btn-success btn-icon-split mr-2">
-                <span class="icon text-white-50"><i class="fas fa-user-plus"></i></span>
-                <span class="text">Register New Client</span>
+            <a href="{% url 'main:meter_reader_requirements' %}" class="btn btn-info btn-icon-split mr-2">
+                <span class="icon text-white-50"><i class="fas fa-tasks"></i></span>
+                <span class="text">View Requirements</span>
             </a>
-            <a href="{% url 'meter_reading' %}" class="btn btn-primary btn-icon-split">
+            <a href="{% url 'main:meter_reading' %}" class="btn btn-primary btn-icon-split">
                 <span class="icon text-white-50"><i class="fas fa-tachometer-alt"></i></span>
                 <span class="text">Add Meter Reading</span>
             </a>
@@ -70,37 +70,48 @@
 
     <!-- Client List Table -->
     <div class="card shadow mb-4">
-        <div class="card-header py-3">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Client List</h6>
+            <a href="{% url 'main:meter_reading' %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus"></i> Add New Reading
+            </a>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered" id="clientsTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
+                            <th>Meter Number</th>
                             <th>Full Name</th>
                             <th>Address</th>
                             <th>Contact Number</th>
                             <th>Status (This Month)</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for client in clients %}
                         <tr>
-                            <td>{{ client.name.get_full_name }}</td>
+                            <td>{{ client.meter_number }}</td>
+                            <td>{{ client.account.get_full_name }}</td>
                             <td>{{ client.address }}</td>
                             <td>{{ client.contact_number }}</td>
                             <td>
-                                {% if client.name.id in billed_client_ids %}
+                                {% if client.id in billed_client_ids %}
                                     <span class="badge badge-success">Billed</span>
                                 {% else %}
                                     <span class="badge badge-warning">Pending</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                <a href="{% url 'main:add_meter_reading' client.id %}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus-circle"></i> Add Reading
+                                </a>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center">No clients found.</td>
+                            <td colspan="6" class="text-center">No clients found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -110,48 +121,6 @@
     </div>
 </div>
 {% endblock %}
-        <h1 class="h3 mb-0 text-gray-800">Meter Reader Dashboard</h1>
-    </div>
-
-    <!-- Content Row -->
-    <div class="row">
-
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Total Clients</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clients_count }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Billed Clients (This Month)</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ billed_clients_count }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -200,9 +169,9 @@
                             </td>
                             <td>
                                 {% if client.id in billed_client_ids %}
-                                    <a href="{% url 'manage_billing' client.pk %}" class="btn btn-info btn-sm">Update Reading</a>
+                                    <a href="{% url 'main:manage_billing' client.pk %}" class="btn btn-info btn-sm">Update Reading</a>
                                 {% else %}
-                                    <a href="{% url 'manage_billing' client.pk %}" class="btn btn-primary btn-sm">Add Reading</a>
+                                    <a href="{% url 'main:manage_billing' client.pk %}" class="btn btn-primary btn-sm">Add Reading</a>
                                 {% endif %}
                             </td>
                         </tr>
@@ -213,4 +182,4 @@
         </div>
     </div>
 </div>
-{% endblock body %}
+{% endblock %}

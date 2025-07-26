@@ -1,0 +1,64 @@
+{% extends 'main/layout.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Record Payment for Bill #{{ bill.id }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Client:</strong> {{ bill.client.account.get_full_name }}</p>
+                            <p><strong>Meter Number:</strong> {{ bill.client.meter_number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Amount:</strong> KSh{{ bill.total_amount }}</p>
+                            <p><strong>Due Date:</strong> {{ bill.due_date }}</p>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="payment_method">Payment Method</label>
+                            <select name="payment_method" id="payment_method" class="form-control" required>
+                                <option value="">Select Payment Method</option>
+                                <option value="ACH">ACH Transfer</option>
+                                <option value="M-Pesa">M-Pesa</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="mpesa_code_field" style="display: none;">
+                            <label for="mpesa_code">M-Pesa Transaction Code</label>
+                            <input type="text" name="mpesa_code" id="mpesa_code" class="form-control" placeholder="e.g., MPESA123456789">
+                            <small class="form-text text-muted">Enter the M-Pesa transaction code received after payment.</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="notes">Notes (Optional)</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Any additional information about this payment..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success btn-block">Record Payment</button>
+                        <a href="{% url 'main:ongoingbills' %}" class="btn btn-secondary btn-block">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('payment_method').addEventListener('change', function() {
+        var mpesaField = document.getElementById('mpesa_code_field');
+        if (this.value === 'M-Pesa') {
+            mpesaField.style.display = 'block';
+        } else {
+            mpesaField.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

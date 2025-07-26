@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Bill{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Delete Bill</h3>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to delete this bill?</p>
+                    
+                    <p><strong>Client:</strong> {{ bill.client }}</p>
+                    <p><strong>Amount:</strong> KES {{ bill.amount }}</p>
+                    <p><strong>Status:</strong> {{ bill.status }}</p>
+                    
+                    <form method="POST" action="{% url 'main:delete_bills' bill.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete Bill</button>
+                        <a href="{% url 'main:manage_billing' %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

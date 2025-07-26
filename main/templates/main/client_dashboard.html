@@ -11,12 +11,21 @@
                     <h6 class="m-0 font-weight-bold text-primary">Welcome, {{ request.user.first_name }}!</h6>
                 </div>
                 <div class="card-body">
-                    <p>This is your personal dashboard. From here, you can manage your account, view your bills, and see your consumption history.</p>
+                    {% if is_client %}
+                        <p>This is your personal dashboard. From here, you can manage your account, view your bills, and see your consumption history.</p>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <h4 class="alert-heading">Account Not Yet Activated</h4>
+                            <p>Your account has been created, but it hasn't been activated for billing services yet. An administrator needs to add you as a client before you can view bills and consumption history.</p>
+                            <p class="mb-0">Please contact the administrator for assistance.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
+    {% if is_client %}
     <div class="row">
         <!-- Unpaid Bills Card -->
         <div class="col-xl-6 col-md-6 mb-4">
@@ -32,7 +41,7 @@
                             <i class="fas fa-file-invoice-dollar fa-2x text-gray-300"></i>
                         </div>
                     </div>
-                    <a href="{% url 'ongoingbills' %}" class="stretched-link"></a>
+                    <a href="{% url 'main:ongoingbills' %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
@@ -55,11 +64,12 @@
                             <i class="fas fa-history fa-2x text-gray-300"></i>
                         </div>
                     </div>
-                     <a href="{% url 'billshistory' %}" class="stretched-link"></a>
+                     <a href="{% url 'main:billshistory' %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
     </div>
+    {% endif %}
 
 </div>
 {% endblock body %}

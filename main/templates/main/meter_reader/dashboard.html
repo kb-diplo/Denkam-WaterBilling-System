@@ -1,0 +1,181 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Meter Reader Dashboard - Denkam Waters{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Meter Reader Dashboard</h1>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Assigned Clients</h5>
+                    <p class="display-5">{{ total_clients }}</p>
+                    <a href="{% url 'main:meter_reading' %}" class="text-white">View all <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">This Month's Readings</h5>
+                    <p class="display-5">{{ recent_readings|length }}</p>
+                    <a href="{% url 'main:add_meter_reading' %}" class="text-white">Add Reading <i class="fas fa-plus-circle"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Readings</h5>
+                    <p class="display-5">0</p>
+                    <a href="#" class="text-white">View pending <i class="fas fa-tasks"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Overdue Readings</h5>
+                    <p class="display-5">0</p>
+                    <a href="#" class="text-white">View overdue <i class="fas fa-exclamation-triangle"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                        <a href="{% url 'main:add_meter_reading' %}" class="btn btn-primary me-md-2 mb-2">
+                            <i class="fas fa-tachometer-alt me-1"></i> Record Meter Reading
+                        </a>
+                        <a href="{% url 'main:meter_reading' %}" class="btn btn-outline-secondary me-md-2 mb-2">
+                            <i class="fas fa-list me-1"></i> View All Readings
+                        </a>
+                        <a href="#" class="btn btn-outline-info me-md-2 mb-2">
+                            <i class="fas fa-print me-1"></i> Print Reading Sheet
+                        </a>
+                        <a href="{% url 'main:profile' user.id %}" class="btn btn-outline-dark mb-2">
+                            <i class="fas fa-user-cog me-1"></i> My Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Readings -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Meter Readings</h5>
+            <a href="{% url 'main:meter_reading' %}" class="btn btn-sm btn-outline-primary">
+                View All <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="card-body">
+            {% if recent_readings %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Client</th>
+                                <th>Meter #</th>
+                                <th>Reading</th>
+                                <th>Previous</th>
+                                <th>Consumption</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reading in recent_readings %}
+                            <tr>
+                                <td>{{ reading.reading_date|date:"M d, Y" }}</td>
+                                <td>{{ reading.client.get_full_name }}</td>
+                                <td>{{ reading.client.meter_number }}</td>
+                                <td>{{ reading.current_reading }} m³</td>
+                                <td>{{ reading.previous_reading }} m³</td>
+                                <td>{{ reading.consumption }} m³</td>
+                                <td>
+                                    <span class="badge {% if reading.status == 'PENDING' %}bg-warning{% else %}bg-success{% endif %}">
+                                        {{ reading.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    No meter readings found. Start by adding a new meter reading.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upcoming Tasks -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Upcoming Tasks</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning mb-0">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <div>
+                        <strong>Next Reading Cycle:</strong> {{ next_reading_date|date:"F d, Y" }}
+                        <div class="small">
+                            {% if days_until_next_reading > 0 %}
+                                {{ days_until_next_reading }} days remaining
+                            {% elif days_until_next_reading == 0 %}
+                                Readings are due today!
+                            {% else %}
+                                Readings are overdue by {{ days_until_next_reading|abs }} days
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <h6>This Month's Schedule</h6>
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Reading Collection</h6>
+                            <small class="text-muted">1st - 5th {{ current_month }}</small>
+                        </div>
+                        <p class="mb-1">Collect meter readings from all assigned clients.</p>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Report Submission</h6>
+                            <small class="text-muted">6th {{ current_month }}</small>
+                        </div>
+                        <p class="mb-1">Submit all collected readings to the billing department.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

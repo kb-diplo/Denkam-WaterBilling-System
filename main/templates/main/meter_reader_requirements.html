@@ -1,0 +1,184 @@
+{% extends 'main/layout.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Meter Reader Requirements & Tasks</h1>
+    </div>
+
+    <!-- Requirements Overview -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Monthly Requirements Overview</h6>
+                </div>
+                <div class="card-body">
+                    <p>As a meter reader, your primary responsibility is to collect accurate meter readings for all assigned clients on a monthly basis. This page provides you with an overview of your current tasks and requirements.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Key Requirements:</h5>
+                            <ul>
+                                <li>Collect meter readings for all assigned clients every month</li>
+                                <li>Ensure readings are accurate and not lower than previous readings</li>
+                                <li>Submit readings by the 5th of each month</li>
+                                <li>Report any issues with meters or access to clients</li>
+                                <li>Maintain professional conduct during client visits</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Performance Metrics:</h5>
+                            <ul>
+                                <li>Target completion rate: 100% of assigned clients</li>
+                                <li>Accuracy requirement: 0% negative consumption readings</li>
+                                <li>Timeliness: All readings submitted by deadline</li>
+                                <li>Client satisfaction: Professional and courteous service</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Status -->
+    <div class="row">
+        <!-- Pending Clients Card -->
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Readings ({{ current_month }}/{{ current_year }})</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_clients_count }} of {{ total_clients_count }} clients</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'main:meter_reading' %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-tachometer-alt"></i> Submit Readings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Quick Actions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Submit & Search</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bolt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'main:meter_reading' %}" class="btn btn-info btn-sm mr-2">
+                            <i class="fas fa-plus-circle"></i> New Reading
+                        </a>
+                        <a href="{% url 'main:meter_reading' %}" class="btn btn-info btn-sm">
+                            <i class="fas fa-search"></i> Search Clients
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Clients List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Clients Needing Meter Reading</h6>
+                </div>
+                <div class="card-body">
+                    {% if pending_clients %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="pendingClientsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Client Name</th>
+                                    <th>Meter Number</th>
+                                    <th>Address</th>
+                                    <th>Contact</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in pending_clients %}
+                                <tr>
+                                    <td>{{ client.account.get_full_name }}</td>
+                                    <td>{{ client.meter_number }}</td>
+                                    <td>{{ client.address }}</td>
+                                    <td>{{ client.contact_number }}</td>
+                                    <td>
+                                        <a href="{% url 'main:add_meter_reading' client.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-tachometer-alt"></i> Add Reading
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <strong>Congratulations!</strong> All meter readings for this month have been submitted.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Readings -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Meter Readings</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_readings %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Client Name</th>
+                                    <th>Meter Number</th>
+                                    <th>Reading Date</th>
+                                    <th>Reading Value</th>
+                                    <th>Consumption</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reading in recent_readings %}
+                                <tr>
+                                    <td>{{ reading.client.account.get_full_name }}</td>
+                                    <td>{{ reading.client.meter_number }}</td>
+                                    <td>{{ reading.reading_date|date:"M d, Y" }}</td>
+                                    <td>{{ reading.reading_value }}</td>
+                                    <td>{{ reading.consumption }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p>No recent readings found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

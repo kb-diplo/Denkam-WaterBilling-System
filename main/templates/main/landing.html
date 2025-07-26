@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to Denkam Waters Billing System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-4">Welcome to Denkam Waters</h1>
+            <p class="lead mb-4">Efficient water billing and management system for our valued customers and staff.</p>
+            
+            <div class="row mt-5">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h2 class="card-title">Customer Login</h2>
+                            <p class="card-text">Access your account to view bills, make payments, and track your water usage.</p>
+                            <a href="{% url 'account:login' %}?next={% url 'main:client_dashboard' %}" class="btn btn-primary btn-lg btn-block">Customer Login</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h2 class="card-title">Staff Login</h2>
+                            <p class="card-text">Access the staff portal for meter reading, billing, and customer management.</p>
+                            <a href="{% url 'account:login' %}?next={% url 'main:dashboard' %}" class="btn btn-outline-primary btn-lg btn-block">Staff Login</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-5">
+                <h3>About Our System</h3>
+                <p class="lead">Denkam Waters provides reliable water services with our easy-to-use billing system.</p>
+                <p>Manage your account, view billing history, and make payments online anytime, anywhere.</p>
+                
+                <div class="mt-4">
+                    <p>New customer? <a href="{% url 'main:register_customer' %}">Register here</a></p>
+                    <p>Need help? <a href="mailto:support@denkamwaters.co.ke">Contact our support team</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Admin Dashboard - Denkam Waters{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Admin Dashboard</h1>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Total Clients</h5>
+                    <p class="display-4">{{ total_clients }}</p>
+                    <a href="{% url 'main:clients' %}" class="text-white">View all clients <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Total Bills</h5>
+                    <p class="display-4">{{ total_bills }}</p>
+                    <a href="{% url 'main:ongoingbills' %}" class="text-white">View all bills <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Total Payments</h5>
+                    <p class="display-4">KSh {{ total_payments|floatformat:2 }}</p>
+                    <a href="{% url 'main:payment_records' %}" class="text-white">View payments <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bills -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Bills</h5>
+            <a href="{% url 'main:ongoingbills' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Generate Bills
+            </a>
+        </div>
+        <div class="card-body">
+            {% if recent_bills %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Bill #</th>
+                                <th>Client</th>
+                                <th>Billing Date</th>
+                                <th>Due Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bill in recent_bills %}
+                            <tr>
+                                <td>#{{ bill.id }}</td>
+                                <td>{{ bill.client.get_full_name }}</td>
+                                <td>{{ bill.billing_date|date:"M d, Y" }}</td>
+                                <td>{{ bill.due_date|date:"M d, Y" }}</td>
+                                <td>KSh {{ bill.amount|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge {% if bill.status == 'PAID' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ bill.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'main:generate_bill_pdf' bill.id %}" class="btn btn-sm btn-outline-primary" title="View Bill">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </a>
+                                    {% if not bill.is_paid %}
+                                        <a href="{% url 'select_payment_method' bill.id %}" class="btn btn-sm btn-outline-success" title="Record Payment">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-2">
+                    <a href="{% url 'ongoing_bills' %}" class="btn btn-outline-primary btn-sm">View All Bills</a>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-0">No recent bills found.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Recent Payments</h5>
+        </div>
+        <div class="card-body">
+            {% if recent_payments %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Payment #</th>
+                                <th>Client</th>
+                                <th>Bill #</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in recent_payments %}
+                            <tr>
+                                <td>#{{ payment.id }}</td>
+                                <td>{{ payment.client.get_full_name }}</td>
+                                <td>#{{ payment.bill.id }}</td>
+                                <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                                <td>KSh {{ payment.amount|floatformat:2 }}</td>
+                                <td>{{ payment.get_payment_method_display }}</td>
+                                <td>
+                                    <a href="{% url 'view_receipt' payment.bill.id %}" class="btn btn-sm btn-outline-primary" title="View Receipt">
+                                        <i class="fas fa-receipt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-2">
+                    <a href="{% url 'payment_records' %}" class="btn btn-outline-primary btn-sm">View All Payments</a>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-0">No recent payments found.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

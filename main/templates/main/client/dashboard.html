@@ -1,0 +1,180 @@
+{% extends 'main/base.html' %}
+
+{% block title %}My Dashboard - Denkam Waters{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Welcome Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h1 class="h4 mb-3">Welcome, {{ client.get_full_name|default:user.email }}!</h1>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Account Number:</strong> {{ client.account_number }}</p>
+                            <p><strong>Meter Number:</strong> {{ client.meter_number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Account Status:</strong> 
+                                <span class="badge {% if client.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ client.is_active|yesno:"Active,Inactive" }}
+                                </span>
+                            </p>
+                            <p><strong>Last Login:</strong> {{ user.last_login|date:"F d, Y H:i"|default:"First login" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bills Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">My Bills</h5>
+                </div>
+                <div class="card-body">
+                    {% if bills %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Bill #</th>
+                                        <th>Billing Period</th>
+                                        <th>Due Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bill in bills %}
+                                    <tr>
+                                        <td>#{{ bill.id }}</td>
+                                        <td>{{ bill.billing_date|date:"M Y" }}</td>
+                                        <td>{{ bill.due_date|date:"M d, Y" }}</td>
+                                        <td>KSh {{ bill.amount|floatformat:2 }}</td>
+                                        <td>
+                                            <span class="badge {% if bill.status == 'PAID' %}bg-success{% elif bill.is_overdue %}bg-danger{% else %}bg-warning{% endif %}">
+                                                {{ bill.get_status_display }}
+                                                {% if bill.is_overdue %} (Overdue){% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'main:generate_bill_pdf' bill.id %}" class="btn btn-sm btn-outline-primary" title="View Bill">
+                                                <i class="fas fa-file-invoice"></i>
+                                            </a>
+                                            {% if not bill.is_paid %}
+                                                <a href="{% url 'select_payment_method' bill.id %}" class="btn btn-sm btn-outline-success" title="Pay Bill">
+                                                    <i class="fas fa-money-bill-wave"></i>
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'main:client_billing_history' client.id %}" class="btn btn-outline-primary btn-sm">View All Bills</a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            You don't have any bills yet. Your bills will appear here once they are generated.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Account Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Account Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted">Current Balance</h6>
+                        <h3 class="mb-0">KSh {{ client.account_balance|default:0|floatformat:2 }}</h3>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="text-muted">Last Payment</h6>
+                        {% if payments.first %}
+                            <p class="mb-0">
+                                KSh {{ payments.first.amount|floatformat:2 }} on {{ payments.first.payment_date|date:"M d, Y" }}
+                            </p>
+                            <small class="text-muted">
+                                {{ payments.first.get_payment_method_display }}
+                                <a href="{% url 'view_receipt' payments.first.bill.id %}" class="ms-2">
+                                    <i class="fas fa-receipt"></i> View Receipt
+                                </a>
+                            </small>
+                        {% else %}
+                            <p class="mb-0">No payments found</p>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'main:client_billing_history' client.id %}" class="btn btn-primary">
+                            <i class="fas fa-file-invoice me-1"></i> View All Bills
+                        </a>
+                        {% with unpaid_bill=client.bills.filter.is_paid|first %}
+                            {% if unpaid_bill %}
+                                <a href="{% url 'select_payment_method' unpaid_bill.id %}" class="btn btn-success">
+                                    <i class="fas fa-money-bill-wave me-1"></i> Pay Bill Now
+                                </a>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'main:profile' user.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-circle me-2"></i> Update Profile
+                    </a>
+                    <a href="{% url 'main:client_billing_history' client.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-history me-2"></i> Billing History
+                    </a>
+                    <a href="{% url 'main:generate_client_list_pdf' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-download me-2"></i> Download Statements
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#contactSupportModal">
+                        <i class="fas fa-headset me-2"></i> Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Support Modal -->
+<div class="modal fade" id="contactSupportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Contact Support</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>For support, please contact us at:</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-phone me-2"></i> +254 7XX XXX XXX</li>
+                    <li><i class="fas fa-envelope me-2"></i> support@denkamwaters.co.ke</li>
+                    <li><i class="fas fa-map-marker-alt me-2"></i> Kahawa Wendani, Nairobi</li>
+                </ul>
+                <p class="mb-0">Our support team is available Monday to Friday, 8:00 AM to 5:00 PM.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

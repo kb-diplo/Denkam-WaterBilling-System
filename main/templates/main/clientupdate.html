@@ -1,5 +1,4 @@
 {% extends 'main/layout.html' %}
-{% load widget_tweaks %}
 
 {% block content %}
 <div class="container">
@@ -15,34 +14,34 @@
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label for="{{ form.first_name.id_for_label }}">First Name</label>
-                                {% render_field form.first_name class="form-control" %}
+                                {{ form.first_name|add_class:"form-control" }}
                             </div>
                             <div class="form-group col-md-6">
                                 <label for="{{ form.last_name.id_for_label }}">Last Name</label>
-                                {% render_field form.last_name class="form-control" %}
+                                {{ form.last_name|add_class:"form-control" }}
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="{{ form.meter_number.id_for_label }}">Meter Number</label>
-                            {% render_field form.meter_number class="form-control" %}
+                            {{ form.meter_number|add_class:"form-control" }}
                         </div>
                         <div class="form-group">
                             <label for="{{ form.address.id_for_label }}">Address</label>
-                            {% render_field form.address class="form-control" %}
+                            {{ form.address|add_class:"form-control" }}
                         </div>
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label for="{{ form.contact_number.id_for_label }}">Contact Number</label>
-                                {% render_field form.contact_number class="form-control" %}
+                                {{ form.contact_number|add_class:"form-control" }}
                             </div>
                             <div class="form-group col-md-6">
                                 <label for="{{ form.status.id_for_label }}">Connection Status</label>
-                                {% render_field form.status class="form-control" %}
+                                {{ form.status|add_class:"form-control" }}
                             </div>
                         </div>
                         <div class="d-flex justify-content-center mt-4">
                             <button type="submit" class="btn btn-primary w-25">Save Changes</button>
-                            <a href="{% url 'clients' %}" class="btn btn-secondary w-25 ml-3">Cancel</a>
+                            <a href="{% url 'main:clients' %}" class="btn btn-secondary w-25 ml-3">Cancel</a>
                         </div>
                     </form>
                 </div>

@@ -43,10 +43,10 @@
                             <th> {{ client.address }} </th>
                             <th> {{client.status}} </th>
                             <td class="text-center">
-                                <a href="{% url 'manage_billing' client.id %}" class="btn btn-primary btn-sm">Manage Billing</a>
+                                <a href="{% url 'main:manage_billing' client.id %}" class="btn btn-primary btn-sm">Manage Billing</a>
                                 {% if request.user.role == 'ADMIN' %}
-                                <a href="{% url 'client_update' client.id %}" class="btn btn-info btn-sm">Update</a>
-                                <a href="{% url 'client_delete' client.id %}" class="btn btn-danger btn-sm">Delete</a>
+                                <a href="{% url 'main:client_update' client.id %}" class="btn btn-info btn-sm">Update</a>
+                                <a href="{% url 'main:client_delete' client.id %}" class="btn btn-danger btn-sm">Delete</a>
                                 {% endif %}
                             </td>
                         </tr>   
@@ -72,34 +72,104 @@
                 <div id="reader"> </div>
                 <form action="" method="POST" class="user" enctype="multipart/form-data">
                     {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    <div class="form-group mt-3">
+                        <label>Email: </label> <br>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger">
+                                {{ form.email.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Password: </label> <br>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger">
+                                {{ form.password.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Confirm Password: </label> <br>
+                        {{ form.confirm_password }}
+                        {% if form.confirm_password.errors %}
+                            <div class="text-danger">
+                                {{ form.confirm_password.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
                     <div class="form-group mt-3">
                         <label>Meter Number: </label> <br>
                         {{ form.meter_number }}
+                        {% if form.meter_number.errors %}
+                            <div class="text-danger">
+                                {{ form.meter_number.errors }}
+                            </div>
+                        {% endif %}
                     </div>
-                    <div class="form-group mt-3">
-                        <label>First Name: </label> <br>
-                        {{ form.first_name }}
+                    <div class="form-row">
+                        <div class="col-md-4 mb-3">
+                            <label>First Name: </label> <br>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger">
+                                    {{ form.first_name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label>Middle Name: </label> <br>
+                            {{ form.middle_name }}
+                            {% if form.middle_name.errors %}
+                                <div class="text-danger">
+                                    {{ form.middle_name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label>Last Name: </label> <br>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger">
+                                    {{ form.last_name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="form-group mt-3">
-                        <label>Middle Name: </label> <br>
-                        {{ form.middle_name }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Last Name: </label> <br>
-                        {{ form.last_name }}
-                    </div>
-                    
-                    <div class="form-group mt-3">
-                        <label>Contact Number: </label> <br>
-                        {{ form.contact_number }}
+                    <div class="form-row">
+                        <div class="col-md-6 mb-3">
+                            <label>Contact Number: </label> <br>
+                            {{ form.contact_number }}
+                            {% if form.contact_number.errors %}
+                                <div class="text-danger">
+                                    {{ form.contact_number.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Connection Status: </label> <br>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">
+                                    {{ form.status.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="form-group mt-3">
                         <label>Address: </label> <br>
                         {{ form.address }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Connection Status: </label> <br>
-                        {{ form.status }}
+                        {% if form.address.errors %}
+                            <div class="text-danger">
+                                {{ form.address.errors }}
+                            </div>
+                        {% endif %}
                     </div>
                 
             </div>

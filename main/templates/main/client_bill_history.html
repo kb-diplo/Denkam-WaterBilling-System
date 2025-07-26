@@ -25,12 +25,12 @@
                         {% for bill in bills %}
                         <tr>
                             <td>{{ bill.id }}</td>
-                            <td>{{ bill.meter_consumption }}</td>
+                            <td>{{ bill.consumption }}</td>
                             <td>{{ bill.payable }}</td>
                             <td>
                                 {{ bill.status }}
                                 {% if bill.status == 'Pending' %}
-                                    <a href="{% url 'initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm ml-2">Pay with M-Pesa</a>
+                                    <a href="{% url 'main:initiate_mpesa_payment' bill.id %}" class="btn btn-success btn-sm ml-2">Pay with M-Pesa</a>
                                 {% endif %}
                             </td>
                             <td>{{ bill.duedate }}</td>

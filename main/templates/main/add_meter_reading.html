@@ -1,24 +1,92 @@
 {% extends 'main/layout.html' %}
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'main:meter_reading' %}" class="btn btn-secondary btn-icon-split">
+            <span class="icon text-white-50">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <span class="text">Back to Meter Reading</span>
+        </a>
+    </div>
+
     <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{{ title }}</h3>
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Client Information</h6>
                 </div>
                 <div class="card-body">
-                    <p><strong>Client:</strong> {{ client.first_name }} {{ client.last_name }}</p>
-                    <p><strong>Address:</strong> {{ client.address }}</p>
-                    <p><strong>Last Reading:</strong> {{ last_reading }}</p>
-                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Client Name:</strong> {{ client.account.get_full_name }}</p>
+                            <p><strong>Email:</strong> {{ client.account.email }}</p>
+                            <p><strong>Meter Number:</strong> {{ client.meter_number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Contact:</strong> {{ client.contact_number }}</p>
+                            <p><strong>Address:</strong> {{ client.address }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if client.status == 'Active' %}
+                                    <span class="badge badge-success">{{ client.status }}</span>
+                                {% elif client.status == 'Pending' %}
+                                    <span class="badge badge-warning">{{ client.status }}</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">{{ client.status }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Add New Meter Reading</h6>
+                </div>
+                <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
                         <div class="form-group">
-                            <label for="id_reading">New Meter Reading</label>
-                            {{ form.reading }}
+                            <label for="{{ form.reading_value.id_for_label }}">Meter Reading Value</label>
+                            {{ form.reading_value }}
+                            {% if form.reading_value.errors %}
+                                <div class="text-danger">
+                                    {{ form.reading_value.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Enter the current meter reading value (e.g., 123.45)</small>
                         </div>
-                        <button type="submit" class="btn btn-primary mt-3">Submit Reading</button>
+
+                        <div class="form-group">
+                            <label for="{{ form.notes.id_for_label }}">Notes (Optional)</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger">
+                                    {{ form.notes.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Add any additional notes about this reading</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-icon-split">
+                            <span class="icon text-white-50">
+                                <i class="fas fa-save"></i>
+                            </span>
+                            <span class="text">Submit Reading</span>
+                        </button>
+                        <a href="{% url 'main:meter_reading' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
                     </form>
                 </div>
             </div>
