@@ -6,17 +6,6 @@ from main.models import *
 import sweetify
 
 
-def verified_or_superuser(function):
-  @wraps(function)
-  def wrap(request, *args, **kwargs):
-        profile = request.user
-        if profile.verified or profile.is_superuser:
-             return function(request, *args, **kwargs)
-        else:
-            return HttpResponseRedirect(reverse('verify'))
-
-  return wrap
-
 def client_facing_login_required(function):
   @wraps(function)
   def wrap(request, *args, **kwargs):
