@@ -2,7 +2,11 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load environment variables from .env.local if it exists, otherwise from .env
+if os.path.exists('.env.local'):
+    load_dotenv('.env.local')
+else:
+    load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -11,11 +15,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'a-default-secret-key-for-local-development')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:8000']
+CORS_ALLOWED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 
 ALLOWED_HOSTS = ['.vercel.app', '127.0.0.1', os.environ.get('VERCEL_URL', 'localhost')]
 
@@ -84,31 +88,16 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 
-from urllib.parse import urlparse
-
-POSTGRES_URL = os.environ.get('POSTGRES_URL')
-
-if POSTGRES_URL:
-   
-    url = urlparse(POSTGRES_URL)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': url.path[1:],
-            'USER': url.username,
-            'PASSWORD': url.password,
-            'HOST': url.hostname,
-            'PORT': url.port,
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'denkam_waters'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
-else:
-    # Fallback to SQLite if no POSTGRES_URL is set.
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 
 
@@ -151,9 +140,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
 
-OTP = True
-OTP_EMAIL = "tingzlarry@gmail.com"
-OTP_PASSWORD = 'xkuh apzw awtn inyf'
+# Email Configuration for Gmail
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # M-Pesa Configuration
@@ -183,3 +177,19 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+
+# CSRF Settings
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Session Settings
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SAMESITE = 'Lax'
