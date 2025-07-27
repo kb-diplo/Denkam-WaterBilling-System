@@ -42,14 +42,7 @@ INSTALLED_APPS = [
     
 ]
 
-# Email Configuration for Password Reset
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'tingzlarry@gmail.com' 
-EMAIL_HOST_PASSWORD ='xkuh apzw awtn inyf' 
-DEFAULT_FROM_EMAIL = 'Denkam Waters <noreply@denkamwaters.com>'
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -152,9 +145,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
 
-OTP = True
-OTP_EMAIL = "tingzlarry@gmail.com"
-OTP_PASSWORD = 'xkuh apzw awtn inyf'
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # M-Pesa Configuration
